@@ -1,0 +1,414 @@
+/*
+ *  Copyright 2011 The Stochastico Project
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+
+#include "sdm/data_manager.h"
+
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <limits>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "rng/random.h"
+#include "util/functions.h"
+#include "util/csv.h"
+#include "util/invalid_input_error.h"
+#include "util/properties.h"
+
+namespace sdm {
+
+using std::set;
+using std::string;
+using std::transform;
+using std::vector;
+using std::numeric_limits;
+
+using rng::Random;
+using util::CSVReader;
+using util::to_numeric;
+using util::tokenize;
+using util::to_string;
+using util::trim;
+using util::Properties;
+
+DataManager::~DataManager(){
+    if ( folds.size() > 1 ) {
+        for ( unsigned f = 0; f < folds.size(); f++ ) {
+            delete folds[f];
+        }
+    }
+    for ( unsigned n = 0; n < nominalValues.size(); n++ ) {
+        delete nominalValues[n];
+    }
+    delete enclosure;
+    delete dimensions;
+}
+
+void DataManager::init( const Properties &parameters ) {
+    string delimiter_param( "Data::Fields::Deliminator" );
+    if ( parameters.contains_property(delimiter_param) ) {
+        delimiter = parameters.get_property( delimiter_param );
+    }
+
+    string headers_field_param( "Data::Headers" );
+    if ( parameters.contains_property(headers_field_param) ) {
+        string headers_field_prop = parameters.get_property(
+                                                    headers_field_param);
+        transform(headers_field_prop.begin(), headers_field_prop.end(),
+                  headers_field_prop.begin(), ::tolower);
+        if (headers_field_prop.compare( "true" ) == 0) {
+            headers = true;
+        } else if (headers_field_prop.compare( "false" ) == 0) {
+            headers = false;
+        }
+    }
+
+
+    parse_single_value(parameters, "Data::Fields::NumberOf", numFields );
+    parse_field_index(parameters, "Data::Fields::ID", idField );
+    parse_field_index(parameters, "Data::Fields::Class", colorField );
+
+    vector<int>::iterator vit;
+
+    parse_values<vector<int>,int>(parameters, "Data::Fields::Real", 
+                                  realFields );
+    for ( vit = realFields.begin(); vit != realFields.end(); ++vit ) {
+        --(*vit);
+    }
+
+    parse_values<vector<int>,int>(parameters, "Data::Fields::Interval", 
+                                  intervalFields );
+    for ( vit = intervalFields.begin(); vit != intervalFields.end(); ++vit ) {
+        --(*vit);
+    }
+
+    parse_values<vector<int>,int>(parameters, "Data::Fields::Ordinal", 
+                                  ordinalFields );
+
+    read_ordinal_values(parameters);
+
+    for ( vit = ordinalFields.begin(); vit != ordinalFields.end(); ++vit ) {
+        --(*vit);
+    }
+
+
+
+    parse_values<vector<int>,int>(parameters, "Data::Fields::Nominal", 
+                                  nominalFields );
+    for ( vit = nominalFields.begin(); vit != nominalFields.end(); ++vit ) {
+        --(*vit);
+    }
+
+}
+
+template<typename ValueType>
+int DataManager::parse_field_index( const Properties &parameters,
+                                    const string &name, ValueType &value ) {
+    int info = parse_single_value( parameters, name, value );
+    if ( info == 0) --value;  // Field numbering in input file starts with 1, 
+                              // but C arrays start with 0
+    return info;
+}
+
+template<typename ValueType>
+int DataManager::parse_single_value( const Properties &parameters,
+                                    const string &name, ValueType &value ) {
+    int status = 1;
+    if ( parameters.contains_property(name) ) {
+        string value_str = parameters.get_property( name );
+        if (!value_str.empty() && value_str.compare( "none" ) != 0) {
+            to_numeric( value_str, value );
+            status = 0;
+        }
+    }
+
+    return status;
+}
+
+template<typename Container, typename ContentType>
+int DataManager::parse_values( const Properties &parameters,
+                               const string &name, 
+                               Container &values ) {
+    if ( !parameters.contains_property(name) ) return 1;
+
+    string value_str = parameters.get_property( name );
+    if ( value_str.empty() || value_str.compare( "none" ) == 0) {
+        return 1;
+    }
+
+    vector<string> parts;
+    tokenize( value_str, parts, "," );
+
+    for (unsigned p = 0; p < parts.size(); ++p) {
+        size_t dash_index = parts[p].find( '-' );
+        if ( dash_index == string::npos ) {
+            ContentType value;
+            to_numeric( parts[p], value);
+            values.insert(values.end(), value );
+        } else {
+            string start_str = parts[p].substr(0,dash_index);
+            string end_str = parts[p].substr(dash_index+1);
+
+            ContentType start;
+            to_numeric(start_str, start);
+            ContentType end;
+            to_numeric(end_str, end);
+            if ( end < start ) {
+                throw util::InvalidInputError(__FILE__,__LINE__,
+                                        "End is less than start!"); 
+            }
+            for (ContentType i = start; i != end+1; ++i) {
+                values.insert(values.end(), i );
+            }
+        }
+    }
+    
+    return 0;
+}
+
+void DataManager::read_ordinal_values(const Properties &parameters) {
+    for (unsigned of = 0; of < ordinalFields.size(); ++of ){
+        int fieldID = ordinalFields[of];
+        string value_prop = "Data::Fields::Ordinal::" + to_string(fieldID);
+        if ( parameters.contains_property(value_prop) ) {
+            string value_str = parameters.get_property(value_prop);
+
+            vector<string> values;
+            tokenize( value_str, values, "," );
+
+            NominalScale *ns = new NominalScale();
+
+            for( unsigned v = 0; v < values.size(); ++v ) {
+                ns->mark( trim(values[v]) );
+            }
+
+            ordinalValues.push_back(ns);
+        } else {
+            string msg = "'" + value_prop + "' not found in parameters file!";
+            throw util::InvalidInputError(__FILE__,__LINE__, msg );
+        }
+    }
+}
+
+void DataManager::load_training_data( const string &filename ) {
+    load_data( filename, trainingData );
+}
+
+void DataManager::load_test_data( const string &filename ) {
+    if ( !filename.empty() ) load_data( filename, testData );
+}
+
+void DataManager::load_data( const string &filename, DataStore &dataStore ) {
+    int iNumFields = static_cast<int>(numFields);
+
+    CSVReader csvReader( filename );
+
+    csvReader.set_field_delimiter( delimiter );
+
+    vector<string> fields;
+
+    if ( headers && csvReader.has_more_lines() ) {
+        csvReader.next_line( fields );
+        fields.clear();
+    }
+
+    int nominal_dimensions = nominalFields.size();
+    int ordinal_dimensions = ordinalFields.size();
+    int interval_dimensions = intervalFields.size();
+    int real_dimensions = realFields.size();
+
+    for ( int n = 0; n < nominal_dimensions; n++ ) {
+        NominalScale *ns = new NominalScale();
+        nominalValues.push_back(ns);
+    }
+
+    double **min_max = new double*[iNumFields];
+    for ( int f = 0; f < iNumFields; f++ ) {
+        min_max[f] = new double[2];
+        min_max[f][0] =  numeric_limits<double>::max();
+        min_max[f][1] = -numeric_limits<double>::max();
+    }
+
+    dimensions = new NoirDimensions( nominal_dimensions, ordinal_dimensions,
+                                     interval_dimensions, real_dimensions );
+
+    int id = 0;
+    double value = 0.0;
+    int ivalue = 0;
+    while ( csvReader.has_more_lines() ) {
+        csvReader.next_line( fields );
+
+        if ( fields.size() != numFields ) {
+            throw util::InvalidInputError(__FILE__,__LINE__,
+                    "Expected " + to_string(numFields) +
+                     " fields, but found " + to_string(fields.size()) +
+                                    " fields. Wrong file?" );
+        }
+
+        int color = colors.transcribe( fields[colorField] );
+        if ( color == -1 ) {
+            color = colors.mark( fields[colorField] );
+        }
+
+        if ( idField > -1 ) {
+            to_numeric( fields[idField], id );
+        } else {
+            id++;
+        }
+
+        Point *point = new Point( id, color, dimensions);
+
+        // Get the nominal valued features
+        for ( int n = 0; n < nominal_dimensions; ++n ) {
+            string value_str = trim( fields[nominalFields[n]] );
+
+            // Treat missing nominal values as any other nominal
+            // values rather than assigning them a maker like  NaN
+
+            ivalue = nominalValues[n]->mark( value_str );
+
+            point->set_nominal_coordinate( n, ivalue );
+        }
+
+        // Get the ordinal valued features
+        for ( int o = 0; o < ordinal_dimensions; ++o ) {
+            string value_str = trim( fields[ordinalFields[o]] );
+
+            if ( value_str.empty()             ||
+                 value_str.compare( "?" ) == 0 ||
+                 value_str.compare( "*" ) == 0    ) {
+                ordinalValues[o]->mark( value_str );
+            }
+
+            int value = ordinalValues[o]->transcribe( value_str );
+
+            point->set_ordinal_coordinate( o, value );
+        }
+
+        // Get the interval valued features
+        for ( int i = 0; i < interval_dimensions; ++i ) {
+            string value_str = fields[intervalFields[i]];
+            if ( value_str.empty()             ||
+                 value_str.compare( "?" ) == 0 ||
+                 value_str.compare( "*" ) == 0    ) {
+                value = numeric_limits<double>::quiet_NaN();
+            } else {
+                to_numeric( value_str, value );
+            }
+            point->set_interval_coordinate( i, value );
+            if ( value < min_max[i][0] ) min_max[i][0] = value;
+            if ( value > min_max[i][1] ) min_max[i][1] = value;
+        }
+
+        // Get the real valued features
+        for ( int r = 0; r < real_dimensions; ++r ) {
+            string value_str = fields[realFields[r]];
+            if ( value_str.empty()             ||
+                 value_str.compare( "?" ) == 0 ||
+                 value_str.compare( "*" ) == 0    ) {
+                value = numeric_limits<double>::quiet_NaN();
+            } else {
+                to_numeric( value_str, value );
+            }
+            point->set_real_coordinate( r, value );
+            if ( value < min_max[r][0] ) min_max[r][0] = value;
+            if ( value > min_max[r][1] ) min_max[r][1] = value;
+        }
+
+        dataStore.add( point );
+
+        fields.clear();
+    }
+
+    double lambda = 1.01;
+    double ilambda = 0.99;
+    if ( enclosure == 0 ) {
+        enclosure = new NoirSpace( dimensions );
+
+        for ( int n = 0; n < dimensions->nominal; n++ ) {
+            int max_nominal = nominalValues[n]->size();
+            for ( int nn = 0; nn < max_nominal; nn++ ) {
+                enclosure->add_nominal(n, nn);
+            }
+        }
+
+        for ( int o = 0; o < dimensions->ordinal; o++ ) {
+            int max = ordinalValues[o]->size() + 1;
+            enclosure->set_ordinal_boundaries(o, -1, max );
+        }
+
+
+        for ( int r = 0; r < dimensions->real; r++ ) {
+            double min =  min_max[r][0];
+            double max =  min_max[r][1];
+
+            if ( min > 0.0 ) {
+                min *= ilambda;
+            } else {
+                min *= lambda;
+            }
+
+            if ( max > 0.0 ) {
+                min *= lambda;
+            } else {
+                max *= ilambda;
+            }
+
+            enclosure->set_real_boundaries(r, min, max );
+
+        }
+    }
+
+    // clean up our temporary storage
+    for ( int c = 0; c < dimensions->real; c++ ) {
+        delete[] min_max[c];
+    }
+    delete[] min_max;
+};
+
+void DataManager::partition_training_data( const int &num_folds,
+                                           Random *rand ) {
+    if ( num_folds < 2 ) {
+        folds.push_back( &trainingData );
+        return;
+    }
+
+    for ( int f = 0; f < num_folds; f++ ) {
+        folds.push_back( new DataStore() );
+    }
+
+    DataStore::const_iterator cpit;
+
+    if ( rand == NULL ) {
+        int num_data = 0;
+        for ( cpit = trainingData.begin();
+              cpit != trainingData.end(); ++cpit ) {
+            int fold = num_data % num_folds;
+            folds[fold]->add( *cpit );
+            num_data++;
+        }
+    } else {
+        for (cpit = trainingData.begin(); cpit != trainingData.end(); ++cpit) {
+            int fold = rand->next_int( num_folds );
+            folds[fold]->add( *cpit );
+        }
+    }
+}
+
+}  // namespace sdm

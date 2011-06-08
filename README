@@ -1,0 +1,45 @@
+Stochastico
+
+Version: 0.1.0
+
+Stochastico is an open source implementation of stochastic discrimination (SD).
+SD is a machine learning algorithm used for categorization, pattern recognition
+and predictive modeling. It is the most general algorithm in the
+ensemble learning class of algorithms.
+
+This software is an early release alpha version.  See the src/test/resources
+directory for a list of the data sets on which this software has been
+successfully tested.
+
+===========
+Building
+===========
+
+To build you need to have Python installed on your machine.  Most modern Linux
+versions have Python pre-installed.
+
+To compile, type
+
+./waf distclean
+./waf configure
+./waf build
+
+This will configure then build the software. In the build directory you will
+find two programs: stochastico and unit-tests.
+
+Examples of parameter sets for various test cases can be found in the
+directory src/test/resources.  Note: you will need to download the data
+first and edit the properties file to point to the directory containing
+the data.
+
+To start, issue a command like:
+
+./build/stochastico -p src/test/resource/bezdekIris.properties
+
+Typical results are contained in the src/test/resource/results file.
+
+Please provide feedback!  Positive or negative, whatever you have to say will
+be useful!
+
+Enjoy,
+The Stochastico Team

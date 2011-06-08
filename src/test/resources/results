@@ -1,0 +1,28 @@
+#
+#  Copyright 2011 The Stochastico Project
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+ 
+Results using either a 10-Fold Cross-Validation or, if an explicit test set was
+included, an evaluation of the test set.
+
+Data Set     Accuracy   Error Rate
+
+Iris          0.97        0.03 
+Labor         0.97        0.03 
+WBC           0.97        0.03 
+Ionosphere    0.92        0.08  
+Sonar         0.88        0.12
+satimage      0.83        0.17
+Glass         0.70        0.30
