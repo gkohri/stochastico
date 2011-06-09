@@ -126,20 +126,23 @@ void SDMachine::simple_learning( DataManager &dataManager ) {
 
     int one = 1;
     pthread_t *tid = new pthread_t[discriminators.size()];
+    thread_data *td = new thread_data[discriminators.size()];
     for ( size_t d = 0; d < discriminators.size(); d++ ) {
-            thread_data *td = new thread_data();
-            td->sdm = this;
-            td->dis = discriminators[d];
-            td->dm = &dataManager;
-            td->fold = &one;
+            td[d].sdm = this;
+            td[d].dis = discriminators[d];
+            td[d].dm = &dataManager;
+            td[d].fold = &one;
             pthread_create( &tid[d], NULL, 
-                            prepare_discriminators, td );
+                            prepare_discriminators, &td[d] );
             //prepare_discriminators( td );
     }
 
     for ( size_t d = 0; d < discriminators.size(); d++ ) {
         pthread_join( tid[d], NULL );
     }
+
+    delete[] tid;
+    delete[] td;
 
     ROC *result = test( *(dataManager.get_test_data()) );
 
@@ -162,15 +165,15 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
     create_discriminators( dataManager );
 
     pthread_t *tid = new pthread_t[discriminators.size()];
+    thread_data *td = new thread_data[discriminators.size()];
     for ( int f = 0; f < numFolds; f++ ) {
         for ( size_t d = 0; d < discriminators.size(); d++ ) {
-            thread_data *td = new thread_data();
-            td->sdm = this;
-            td->dis = discriminators[d];
-            td->dm = &dataManager;
-            td->fold = &f;
+            td[d].sdm = this;
+            td[d].dis = discriminators[d];
+            td[d].dm = &dataManager;
+            td[d].fold = &f;
             pthread_create( &tid[d], NULL, 
-                            prepare_discriminators, td );
+                            prepare_discriminators, &td[d] );
         }
         for ( size_t d = 0; d < discriminators.size(); d++ ) {
             pthread_join( tid[d], NULL );
@@ -208,7 +211,7 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
                    "avg. specificity: ", avg_specificity );
 
     delete[] tid;
-
+    delete[] td;
 }
 
 
@@ -298,15 +301,16 @@ ROC* SDMachine::test( DataStore &test_data ) {
     for (unsigned td = 0; td < num_dis; ++td) {
         prediction[td] = new double[num_tests];
     }
+
     pthread_t *tid = new pthread_t[discriminators.size()];
+    thread_data *td = new thread_data[discriminators.size()];
     for (unsigned d = 0; d < num_dis; ++d) {
-            thread_data *td = new thread_data();
-            td->sdm = this;
-            td->dis = discriminators[d];
-            td->dis_id = d;
-            td->dataStore = &test_data;
+            td[d].sdm = this;
+            td[d].dis = discriminators[d];
+            td[d].dis_id = d;
+            td[d].dataStore = &test_data;
             pthread_create( &tid[d], NULL, 
-                            test_discriminators, td );
+                            test_discriminators, &td[d] );
     }
     for ( size_t d = 0; d < discriminators.size(); d++ ) {
         pthread_join( tid[d], NULL );
@@ -343,6 +347,8 @@ ROC* SDMachine::test( DataStore &test_data ) {
         delete[] prediction[d];
     }
     delete[] prediction;
+    delete[] tid;
+    delete[] td;
 
     return roc;
 };
