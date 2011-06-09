@@ -153,7 +153,8 @@ void Discriminator::create_models_lc( const int &num_models,
                     for (pit = trainingData.begin(); pit < trainingData.end(); 
                                                                     ++pit){
                         if ( (*pit)->get_color() == principalColor ) {
-                            double inc = model->predict((*pit)->get_point());
+                            double inc = 
+                                    model->predict((*pit)->get_data_point());
                             (*pit)->increment_coverage(inc);
                             double cov =  (*pit)->get_coverage()*norm;
                             avg_cov_m += cov;
@@ -207,11 +208,11 @@ void Discriminator::training_data_prob_distribution(){
     for ( pit = trainingData.begin(); 
           pit < trainingData.end(); ++pit ){
         if ( (*pit)->get_color() == principalColor ) {
-            npc = test( (*pit)->get_point() );
+            npc = test( (*pit)->get_data_point() );
             avg_pc += npc;
             avg2_pc += (npc*npc);
         } else {
-            opc = test( (*pit)->get_point() );
+            opc = test( (*pit)->get_data_point() );
             avg_oc += opc;
             avg2_oc += (opc*opc);
         }
@@ -246,7 +247,7 @@ void Discriminator::training_data_prob_distribution(){
 };
 
 
-double Discriminator::test( const Point* point ){
+double Discriminator::test( const DataPoint* point ){
     vector<Model*>::const_iterator mit;
 
     unsigned num_models = models.size();

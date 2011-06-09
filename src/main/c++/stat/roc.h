@@ -20,8 +20,6 @@
 #include <cmath>
 #include <cstdint>
 
-#include "sdm/point.h"
-
 namespace stat {
 
 /*

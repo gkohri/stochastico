@@ -17,8 +17,8 @@
 #ifndef SDM_COVERED_POINT_H
 #define SDM_COVERED_POINT_H
 
-#include "sdm/point.h"
-#include "sdm/noir-dimensions.h"
+#include "noir/noir_dimensions.h"
+#include "sdm/data_point.h"
 
 namespace sdm {
 
@@ -28,11 +28,11 @@ namespace sdm {
  */
 class CoveredPoint {
  public:
-    CoveredPoint(const Point *p): point(p), coverage(0.0) {}
+    CoveredPoint(const DataPoint *p): point(p), coverage(0.0) {}
 
     virtual ~CoveredPoint(){}
 
-    const Point* get_point() const {
+    const DataPoint* get_data_point() const {
         return point;
     }
 
@@ -60,7 +60,7 @@ class CoveredPoint {
         ++coverage;
     }
 
-    const sdm::NoirDimensions* get_noir_dimension() const {
+    const noir::NoirDimensions* get_noir_dimension() const {
         return point->dimensions;
     }
 
@@ -97,7 +97,7 @@ class CoveredPoint {
     }
 
     double distance( CoveredPoint *cp) const {
-        return point->distance(cp->get_point());
+        return point->distance(cp->get_data_point());
     }
 
     struct CompareCoverage :
@@ -108,13 +108,13 @@ class CoveredPoint {
     };
 
  private:
-    const Point *point;
+    const DataPoint *point;
     double coverage;
 
     CoveredPoint(const CoveredPoint&) = delete;
     CoveredPoint& operator=(const CoveredPoint&) = delete;
 };
 
-}   // end namespace SD
+}   // end namespace sdm
 
 #endif   // SDM_COVERED_POINT_H

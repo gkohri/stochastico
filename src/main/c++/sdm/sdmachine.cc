@@ -23,7 +23,9 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#include "noir/noir_space.h"
 #include "sdm/discriminator.h"
+#include "sdm/data_point.h"
 #include "rng/mt19937.h"
 #include "rng/random.h"
 #include "rng/random_factory.h"
@@ -39,6 +41,7 @@ namespace sdm {
 using std::string;
 using std::vector;
 
+using noir::NoirSpace;
 using rng::Random;
 using rng::RandomFactory;
 using stat::ROC;
@@ -267,7 +270,7 @@ extern "C" void* test_discriminators( void *arg ) {
     thread_data* td = (thread_data*) arg;
     unsigned num_tests = td->dataStore->size();
     for (unsigned t = 0; t < num_tests; ++t) {
-        Point *point = (*(td->dataStore))[t];
+        DataPoint *point = (*(td->dataStore))[t];
         prediction[td->dis_id][t] = td->dis->test( point );
     }
     return NULL;

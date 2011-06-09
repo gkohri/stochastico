@@ -24,27 +24,27 @@
 
 #include <vector>
 
-#include "sdm/point.h"
+#include "sdm/data_point.h"
 
 namespace sdm {
 
-class DataStore: public std::vector<Point*> {
+class DataStore: public std::vector<DataPoint*> {
  public:
-    DataStore() : std::vector<Point*>() {}
+    DataStore() : std::vector<DataPoint*>() {}
     virtual ~DataStore() {}
 
     /*
      * Adds a data point to the data store
      */
-    inline void add( Point *p ) {
+    inline void add( DataPoint *p ) {
         push_back( p );
     }
 
     /*
      * Deletes a data point from the data store
      */
-    inline void remove( const Point *p ) {
-        std::vector<Point*>::iterator vpit;
+    inline void remove( const DataPoint *p ) {
+        std::vector<DataPoint*>::iterator vpit;
         for ( vpit = begin(); vpit != end(); ++vpit){
             if ( *vpit == p ){
                 erase( vpit );
@@ -54,12 +54,12 @@ class DataStore: public std::vector<Point*> {
     }
 
     /*
-     * Checks whether or not the specified point is contained in the 
+     * Checks whether or not the specified data point is contained in the 
      * DataStore
      */
-    inline bool contains( const Point *p ) {
+    inline bool contains( const DataPoint *p ) {
         bool found = false;
-        std::vector<Point*>::iterator vpit;
+        std::vector<DataPoint*>::iterator vpit;
         for ( vpit = begin(); vpit != end(); ++vpit){
             if ( *vpit == p ){
                 found = true;
@@ -80,7 +80,6 @@ class DataStore: public std::vector<Point*> {
 
     DataStore(const DataStore&) = delete;
     DataStore& operator=(const DataStore&) = delete;
-
 };
 
 }   // end namespace sdm

@@ -15,17 +15,15 @@
  */
 
 
-#include "sdm/point.h"
+#include "noir/point.h"
 
 #include <cmath>
 #include <cstdlib>
 
-namespace sdm {
+namespace noir {
 
-
-Point::Point( const int& id, const int& color,
-              const NoirDimensions *dimensions): 
-              dimensions(dimensions), id(id), color(color), 
+Point::Point( const NoirDimensions *dimensions) :
+              dimensions(dimensions),
               nominals(0), ordinals(0), intervals(0), reals(0) {
 
     nominals  = new int[dimensions->nominal];
@@ -49,7 +47,6 @@ Point::Point( const int& id, const int& color,
         reals[r] = 0.0;
     }
 }
-
 
 Point::~Point() {
     delete[] nominals;
@@ -86,4 +83,4 @@ double Point::distance( const Point *p) const {
     return dist;
 }
 
-}  // namespace sdm
+}  // namespace noir

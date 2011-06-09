@@ -22,8 +22,9 @@
 #include <set>
 #include <vector>
 
+#include "noir/noir_dimensions.h"
+#include "noir/noir_space.h"
 #include "rng/random.h"
-#include "sdm/noir-dimensions.h"
 
 namespace sdm {
 
@@ -31,8 +32,9 @@ using std::numeric_limits;
 using std::set;
 using std::vector;
 
+using noir::NoirDimensions;
+using noir::NoirSpace;
 using rng::Random;
-using sdm::NoirDimensions;
 
 void Model::expand( const NoirSpace &region, CoveredPoint *nexus, 
                     CoveredPoint *nn, Random *rand,
@@ -179,7 +181,7 @@ bool Model::check_point( const CoveredPoint *p ){
 
     bool covered = false;
     for ( nsit = spaces.begin(); nsit != spaces.end(); ++nsit ) {
-        if ( (*nsit)->in_closure( p->get_point() ) ){
+        if ( (*nsit)->in_closure( p->get_data_point() ) ){
             if ( p->get_color() == principalColor ){
                 numPrincipalColor++;
                 covered = true;
@@ -198,7 +200,7 @@ bool Model::covers( const CoveredPoint *p ) const {
 
     bool is_covered = false;
     for ( nsit = spaces.begin(); nsit != spaces.end(); ++nsit ) {
-        if ( (*nsit)->in_closure( p->get_point() ) ){
+        if ( (*nsit)->in_closure( p->get_data_point() ) ){
             is_covered = true;
             break;
         }
@@ -218,7 +220,7 @@ void Model::accepted( const double &numPC, const double &numOC ){
     probNorm     = 1.0/(fracPrincipal - fracOther);
 }
 
-double Model::predict( const Point *p ){
+double Model::predict( const DataPoint *p ){
     vector<NoirSpace*>::const_iterator nsit;
 
     double characteristic = 0.0;

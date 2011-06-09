@@ -14,27 +14,27 @@
  *  limitations under the License.
  */
 
-#ifndef SDM_NOIR_SPACE_H
-#define SDM_NOIR_SPACE_H
+#ifndef NOIR_NOIR_SPACE_H
+#define NOIR_NOIR_SPACE_H
 
 #include <cmath>
 #include <limits>
 #include <set>
 
-#include "sdm/point.h"
-#include "sdm/noir-dimensions.h"
+#include "noir/point.h"
+#include "noir/noir_dimensions.h"
 
-namespace sdm {
+namespace noir {
 
 /*
- * A Noir space is a Banach space with a Cartesian product of finite and 
- * infinite dimensional spaces. A Noir space can contain Nominal values,
+ * A Noir space is a Banach space consisting of a Cartesian product of finite
+ * and infinite dimensional spaces. A Noir space can contain Nominal values,
  * Ordinal values, periodic Interval values and Real values.
  */
 class NoirSpace {
  public:
     // The dimensions of this space
-    sdm::NoirDimensions const * const dimensions;
+    NoirDimensions const * const dimensions;
     
     explicit NoirSpace(const NoirDimensions *dimensions);
 
@@ -112,18 +112,23 @@ class NoirSpace {
      */
     bool in_closure( const Point *point ) const;
 
+    /*
+     * returns the diameter of this space.
+     */
+    double get_diameter() const;
+
  private:
     int    **ordinal_boundaries;
     double **interval_boundaries;
     double **real_boundaries;
+    double diameter;
 
     std::set<int> *allowed_nominals;
 
     NoirSpace(const NoirSpace&) = delete;
     NoirSpace& operator=(const NoirSpace&) = delete;
-
 };
 
-}   // end namespace sdm
+}   // end namespace noir
 
-#endif   // SDM_NOIR_SPACE_H
+#endif   // NOIR_NOIR_SPACE_H

@@ -20,8 +20,8 @@
 #include <vector>
 #include <map>
 
+#include "noir/noir_space.h"
 #include "sdm/data_store.h"
-#include "sdm/noir-space.h"
 #include "sdm/model.h"
 #include "sdm/training_data.h"
 #include "rng/random.h"
@@ -65,7 +65,7 @@ class Discriminator {
     /*
      * Set the boundaries for the learning stage
      */
-    void set_boundary( const NoirSpace *boundary ){
+    void set_boundary( const noir::NoirSpace *boundary ){
         this->boundary = boundary;
     }
 
@@ -105,7 +105,7 @@ class Discriminator {
      * Determine the probability that the specified point is a member of
      * the class specialized by this discriminator.
      */
-    double test( const Point *point );
+    double test( const DataPoint *point );
 
     /*
      * Removes all the data and all the models
@@ -120,7 +120,7 @@ class Discriminator {
  private:
     TrainingData trainingData;
     std::vector<Model*> models;
-    const NoirSpace *boundary;
+    const noir::NoirSpace *boundary;
     rng::Random  *rand;
     double  numPrincipalColor;
     double  numOtherColor;

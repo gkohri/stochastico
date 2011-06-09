@@ -15,13 +15,13 @@
  */
 
 
-#include "sdm/noir-space.h"
+#include "noir/noir_space.h"
 
 #include <cmath>
 #include <limits>
 #include <set>
 
-namespace sdm {
+namespace noir {
 
 using std::set;
 
@@ -30,6 +30,7 @@ NoirSpace::NoirSpace( const NoirDimensions *noir_dimensions ):
                             ordinal_boundaries(0),
                             interval_boundaries(0),
                             real_boundaries(0),
+                            diameter(-1),
                             allowed_nominals(0) {
 
     allowed_nominals = new set<int>[dimensions->nominal];
@@ -140,6 +141,4 @@ bool NoirSpace::in_closure( const Point *point ) const {
     return in_closure;
 }
 
-
-
-}  // namespace sdm
+}  // namespace noir

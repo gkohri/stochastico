@@ -14,12 +14,12 @@
  *  limitations under the License.
  */
 
-#ifndef SDM_NOIR_DIMENSIONS_H
-#define SDM_NOIR_DIMENSIONS_H
+#ifndef NOIR_NOIR_DIMENSIONS_H
+#define NOIR_NOIR_DIMENSIONS_H
 
 #include <string>
 
-namespace sdm {
+namespace noir {
 
 /*
  * The Noir dimension of a Noir space specifies the number of Nominal,
@@ -44,6 +44,6 @@ class NoirDimensions {
     const int real;
 };
 
-}   // end namespace SD
+}   // end namespace noir
 
-#endif   // SDM_NOIR_DIMENSIONS_H
+#endif   // NOIR_NOIR_DIMENSIONS_H

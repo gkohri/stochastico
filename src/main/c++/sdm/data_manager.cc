@@ -25,7 +25,10 @@
 #include <string>
 #include <vector>
 
+#include "noir/noir_dimensions.h"
+#include "noir/noir_space.h"
 #include "rng/random.h"
+#include "sdm/data_point.h"
 #include "util/functions.h"
 #include "util/csv.h"
 #include "util/invalid_input_error.h"
@@ -39,6 +42,8 @@ using std::transform;
 using std::vector;
 using std::numeric_limits;
 
+using noir::NoirDimensions;
+using noir::NoirSpace;
 using rng::Random;
 using util::CSVReader;
 using util::to_numeric;
@@ -272,7 +277,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             id++;
         }
 
-        Point *point = new Point( id, color, dimensions);
+        DataPoint *point = new DataPoint( id, color, dimensions);
 
         // Get the nominal valued features
         for ( int n = 0; n < nominal_dimensions; ++n ) {

@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "sdm/covered_point.h"
-#include "sdm/noir-space.h"
+#include "noir/noir_space.h"
 #include "rng/random.h"
 
 namespace sdm {
@@ -38,7 +38,7 @@ class Model {
         numPrincipalColor(0), numOtherColor(0) {}
 
     virtual ~Model(){
-        std::vector<NoirSpace*>::iterator hit;
+        std::vector<noir::NoirSpace*>::iterator hit;
         for ( hit = spaces.begin(); hit != spaces.end(); ++hit ){
             delete (*hit);
         }
@@ -71,14 +71,14 @@ class Model {
      * Expands this model by creating a hyper-rectangle using the specified
      * nexus and nearest neighbor points.
      */
-    void expand( const NoirSpace &region, CoveredPoint *nexus, 
+    void expand( const noir::NoirSpace &region, CoveredPoint *nexus, 
                  CoveredPoint *nn, 
                  rng::Random *rand, const double &lp, const double &up );
 
     /*
      * Thickens the last hyper-rectangle in the model's list.
      */
-    void thicken( const NoirSpace &region, rng::Random *rand,
+    void thicken( const noir::NoirSpace &region, rng::Random *rand,
                  const double &frac );
 
     /*
@@ -112,10 +112,10 @@ class Model {
      * Returns the probability that the specified point has the same color
      * as this model's principal color.
      */
-    double predict( const Point *p);
+    double predict( const DataPoint *p);
 
  private:
-    std::vector<NoirSpace*> spaces;
+    std::vector<noir::NoirSpace*> spaces;
     double fracPrincipal;
     double fracOther;
     double probNorm;

@@ -21,15 +21,15 @@
 #include <string>
 #include <vector>
 
+#include "noir/noir_dimensions.h"
+#include "noir/noir_space.h"
+#include "rng/random.h"
 #include "sdm/data_store.h"
-#include "sdm/noir-space.h"
 #include "sdm/model.h"
-#include "sdm/noir-dimensions.h"
 #include "sdm/nominal_scale.h"
 #include "sdm/training_data.h"
 #include "util/misc.h"
 #include "util/properties.h"
-#include "rng/random.h"
 
 namespace sdm {
 
@@ -103,7 +103,7 @@ class DataManager {
     /*
      * Returns the hyper-rectangle which encloses all the data.
      */
-    const NoirSpace* get_enclosure() {
+    const noir::NoirSpace* get_enclosure() {
         return enclosure;
     }
 
@@ -117,11 +117,11 @@ class DataManager {
  private:
     DataStore trainingData;
     DataStore testData;
-    NoirSpace *enclosure;
+    noir::NoirSpace *enclosure;
     std::vector<DataStore*> folds;
     std::string delimiter;
     NominalScale colors;
-    NoirDimensions *dimensions;
+    noir::NoirDimensions *dimensions;
     std::vector<int> nominalFields;
     std::vector<int> ordinalFields;
     std::vector<int> intervalFields;

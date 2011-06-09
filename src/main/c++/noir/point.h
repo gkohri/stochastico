@@ -14,12 +14,12 @@
  *  limitations under the License.
  */
 
-#ifndef SDM_POINT_H
-#define SDM_POINT_H
+#ifndef NOIR_POINT_H
+#define NOIR_POINT_H
 
-#include "sdm/noir-dimensions.h"
+#include "noir/noir_dimensions.h"
 
-namespace sdm {
+namespace noir {
 
 /*
  * A point in a Noir space can have Nominal, Ordinal, periodic Interval and
@@ -27,26 +27,12 @@ namespace sdm {
  */
 class Point {
  public:
-    sdm::NoirDimensions const * const dimensions;
+    noir::NoirDimensions const * const dimensions;
 
-    Point( const int& id, const int& color, const NoirDimensions *dimensions ); 
+    Point(const NoirDimensions *dimensions); 
 
     virtual ~Point();
 
-
-    /*
-     * Retrieve this point's id.
-     */
-    int get_id() const {
-        return id;
-    }
-
-    /*
-     * Retrieve this point's color (class).
-     */
-    int get_color() const {
-        return color;
-    }
 
     /*
      * Retrieve the value of the specified nominal coordinate.
@@ -139,8 +125,6 @@ class Point {
     double distance( const Point *p) const;
 
  private:
-    int id;
-    int color;
     int         *nominals;
     int         *ordinals;
     double      *intervals;
@@ -151,6 +135,6 @@ class Point {
 
 };
 
-}   // end namespace SD
+}   // end namespace noir
 
-#endif   // SDM_POINT_H
+#endif   // NOIR_POINT_H
