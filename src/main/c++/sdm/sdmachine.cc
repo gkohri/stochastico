@@ -84,7 +84,7 @@ void SDMachine::init( Properties &parameters ) {
     set_value( "SDM::Model::FeatureSpace::UpperFraction", upperFrac );
     set_value( "SDM::Model::FeatureSpace::LowerFraction", lowerFrac );
     set_value( "SDM::Learning::NumberOfAttempts", numAttempts );
-    set_value( "SDM::Learning::Beta", beta );
+    set_value( "SDM::Learning::EnrichmentLevel", enrichmentLevel );
 
 }
 
@@ -226,7 +226,7 @@ void SDMachine::create_discriminators(DataManager &dataManager) {
         dis->set_boundary( enclosure );
         dis->set_lower_fraction( lowerFrac );
         dis->set_upper_fraction( upperFrac );
-        dis->set_beta( beta );
+        dis->set_enrichment_level( enrichmentLevel );
 
         discriminators.push_back( dis );   
     }

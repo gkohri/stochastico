@@ -40,7 +40,7 @@ class Discriminator {
         boundary(0), rand(0),
         numPrincipalColor(0.0), 
         numOtherColor(0.0),threshold(1.0),
-        lowerFrac(0.0), upperFrac(0.1), beta(1.0),
+        lowerFrac(0.0), upperFrac(0.1), enrichmentLevel(0.1),
         principalColor( principal_color ), numUnfinished(0) {}
 
     virtual ~Discriminator(){
@@ -86,8 +86,8 @@ class Discriminator {
     /*
      * Set the enrichment factor for use in the learning stage
      */
-    void set_beta( const double &beta_value ){
-        beta = beta_value;
+    void set_enrichment_level( const double &enrichment_level ){
+        enrichmentLevel = enrichment_level;
     }
 
     /*
@@ -127,7 +127,7 @@ class Discriminator {
     double  threshold;
     double  lowerFrac;
     double  upperFrac;
-    double  beta;
+    double  enrichmentLevel;
     int     principalColor;
     int     numUnfinished;
 

@@ -142,7 +142,7 @@ void Discriminator::create_models_lc( const int &num_models,
                                                 model_oc/numOtherColor;
 
             //Check for richness
-            if ( ratio_diff >= beta ){
+            if ( ratio_diff >= enrichmentLevel ){
 
                 //Check for uniformity only if we are not using the least
                 //covered point

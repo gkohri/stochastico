@@ -36,9 +36,9 @@ namespace sdm {
  */
 class SDMachine {
  public:
-    explicit SDMachine() : discriminators(), uniform(0),
-                         numModels(100), numFolds(8), numAttempts(100),
-                         lowerFrac(0.0), upperFrac(0.1), beta(1.0) {}
+    explicit SDMachine() : discriminators(), uniform(0), numModels(100), 
+                           numFolds(8), numAttempts(100), lowerFrac(0.0), 
+                           upperFrac(0.1), enrichmentLevel(0.1) {}
 
     virtual ~SDMachine();
 
@@ -69,7 +69,7 @@ class SDMachine {
     int numAttempts;
     double lowerFrac;
     double upperFrac;
-    double beta;
+    double enrichmentLevel;
 
     rng::Random* initialize_uniform_rng( const util::Properties &props );
     void clear_learning_results();
