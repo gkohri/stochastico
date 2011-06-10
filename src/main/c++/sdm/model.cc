@@ -90,18 +90,25 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
         if ( isnan( coordinate ) ) continue;
 
         region.get_interval_boundaries( i, lower, upper );
+        double period = region.get_interval_period(i);
 
-        double radius = (upper - lower)*0.5;
+        double radius = period*0.5;
 
         double zu = radius*(lp + (up-lp)*rand->next());
         double rectUpper = coordinate + zu;
 
-        if ( rectUpper > upper ) rectUpper = upper;
+        if ( rectUpper > period ) 
+            rectUpper = rectUpper - period;
+        else if ( rectUpper > upper )
+            rectUpper = upper;
 
         double zl = radius*(lp + (up-lp)*rand->next());
         double rectLower = coordinate - zl;
 
-        if ( rectLower < lower ) rectLower = lower;
+        if ( rectLower < 0.0 ) 
+            rectLower = period+lower;
+        else if ( rectLower < lower )
+            rectLower = lower;
 
         ns->set_interval_boundaries( i, rectLower, rectUpper );
     }

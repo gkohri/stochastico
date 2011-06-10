@@ -27,8 +27,8 @@
 namespace noir {
 
 /*
- * A Noir space is a Banach space consisting of a Cartesian product of finite
- * and infinite dimensional spaces. A Noir space can contain Nominal values,
+ * A Noir space is a Banach constructed from a Cartesian product of discrete
+ * and continuous dimensional spaces. A Noir space can contain Nominal values,
  * Ordinal values, periodic Interval values and Real values.
  */
 class NoirSpace {
@@ -90,6 +90,20 @@ class NoirSpace {
     }
 
     /*
+     * Set period for the specified interval coordinate.
+     */
+    void set_interval_period(const int &coordinate, const double period) {
+        interval_periods[coordinate] = period;
+    }
+
+    /*
+     * Retrieves the period for the specified interval coordinate
+     */
+    double get_interval_period(const int &coordinate) const {
+        return interval_periods[coordinate];
+    }
+
+    /*
      * Set lower and upper boundaries for the specified real coordinate.
      */
     void set_real_boundaries(const int &coordinate, double lower, double upper){
@@ -115,11 +129,12 @@ class NoirSpace {
     /*
      * returns the diameter of this space.
      */
-    double get_diameter() const;
+    double get_diameter();
 
  private:
     int    **ordinal_boundaries;
     double **interval_boundaries;
+    double *interval_periods;
     double **real_boundaries;
     double diameter;
 

@@ -46,10 +46,12 @@ NoirSpace::NoirSpace( const NoirDimensions *noir_dimensions ):
     }
 
     interval_boundaries = new double*[dimensions->interval];
+    interval_periods = new double[dimensions->interval];
     for ( int i = 0; i < dimensions->interval; ++i ) {
         interval_boundaries[i] = new double[2];
         interval_boundaries[i][0] = -std::numeric_limits<double>::max();
         interval_boundaries[i][1] =  std::numeric_limits<double>::max();
+        interval_periods[i] = std::numeric_limits<double>::max();
     }
 
 
@@ -73,13 +75,13 @@ NoirSpace::~NoirSpace() {
         delete[] interval_boundaries[i];
     }
     delete[] interval_boundaries;
+    delete[] interval_periods;
 
     for ( int r = 0; r < dimensions->real; r++ ) {
         delete[] real_boundaries[r];
     }
     delete[] real_boundaries;
 }
-
 
 bool NoirSpace::in_closure( const Point *point ) const {
 
@@ -101,13 +103,22 @@ bool NoirSpace::in_closure( const Point *point ) const {
 
     // Check the interval cooordinates
 
-    const double* intervals = point->get_real_coordinates();
+    const double* intervals = point->get_interval_coordinates();
     for ( int i = 0; i < dimensions->interval; ++i ) {
         if ( isnan(intervals[i]) ) continue;
-        if ( intervals[i] < interval_boundaries[i][0] ||
-             intervals[i] > interval_boundaries[i][1]   ) {
-            in_closure = false;
-            break;
+        double lower = interval_boundaries[i][0];
+        double upper = interval_boundaries[i][1];
+        double value = fmod(intervals[i], interval_periods[i]);
+        if ( upper < lower ) {
+            if ( !(lower <= value || value <= upper ) ) {
+                in_closure = false;
+                break;
+            }
+        } else {
+            if ( !(lower <= value && value <= upper ) ) {
+                in_closure = false;
+                break;
+            }
         }
     }
 
@@ -139,6 +150,38 @@ bool NoirSpace::in_closure( const Point *point ) const {
     }
 
     return in_closure;
+}
+
+double NoirSpace::get_diameter() {
+    if (diameter == -1) {
+
+        diameter = 0.0;
+        // The reals
+        for ( int r = 0; r < dimensions->real; ++r ) {
+            diameter += fabs(real_boundaries[r][1] - real_boundaries[r][0]);
+        }
+
+        // The intervals
+        for ( int i = 0; i < dimensions->interval; ++i ) {
+            double diff = fabs(interval_boundaries[i][1] - 
+                                                interval_boundaries[i][0]);
+            if (diff > 0.5*interval_periods[i]) diff = 0.5*interval_periods[i];
+            diameter += diff;
+        }
+
+        // The ordinals
+        for ( int o = 0; o < dimensions->ordinal; ++o ) {
+            diameter += static_cast<double>(abs(ordinal_boundaries[o][1] - 
+                                                   ordinal_boundaries[o][0]));
+        }
+
+        // The nominals
+        for ( int n = 0; n < dimensions->nominal; ++n ) {
+            diameter += allowed_nominals[n].size() == 0 ? 0.0 : 1.0;
+        }
+    }
+
+    return diameter;
 }
 
 }  // namespace noir

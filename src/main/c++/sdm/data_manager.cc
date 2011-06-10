@@ -93,21 +93,29 @@ void DataManager::init( const Properties &parameters ) {
 
     parse_values<vector<int>,int>(parameters, "Data::Fields::Real", 
                                   realFields );
+
+    //In the data file the indicies start with 1, but in C++ they start with 0
     for ( vit = realFields.begin(); vit != realFields.end(); ++vit ) {
         --(*vit);
     }
 
     parse_values<vector<int>,int>(parameters, "Data::Fields::Interval", 
                                   intervalFields );
+
+    read_interval_periods(parameters);
+
+    //In the data file the indicies start with 1, but in C++ they start with 0
     for ( vit = intervalFields.begin(); vit != intervalFields.end(); ++vit ) {
         --(*vit);
     }
+
 
     parse_values<vector<int>,int>(parameters, "Data::Fields::Ordinal", 
                                   ordinalFields );
 
     read_ordinal_values(parameters);
 
+    //In the data file the indicies start with 1, but in C++ they start with 0
     for ( vit = ordinalFields.begin(); vit != ordinalFields.end(); ++vit ) {
         --(*vit);
     }
@@ -116,6 +124,8 @@ void DataManager::init( const Properties &parameters ) {
 
     parse_values<vector<int>,int>(parameters, "Data::Fields::Nominal", 
                                   nominalFields );
+
+    //In the data file the indicies start with 1, but in C++ they start with 0
     for ( vit = nominalFields.begin(); vit != nominalFields.end(); ++vit ) {
         --(*vit);
     }
@@ -211,6 +221,24 @@ void DataManager::read_ordinal_values(const Properties &parameters) {
     }
 }
 
+void DataManager::read_interval_periods(const Properties &parameters) {
+    for (unsigned i = 0; i < intervalFields.size(); ++i ){
+        int fieldID = intervalFields[i];
+        string value_prop = "Data::Fields::Period::" + to_string(fieldID);
+        if ( parameters.contains_property(value_prop) ) {
+            string value_str = parameters.get_property(value_prop);
+
+            double period;
+            to_numeric(value_str, period);
+
+            intervalPeriods.push_back(period);
+        } else {
+            string msg = "'" + value_prop + "' not found in parameters file!";
+            throw util::InvalidInputError(__FILE__,__LINE__, msg );
+        }
+    }
+}
+
 void DataManager::load_training_data( const string &filename ) {
     load_data( filename, trainingData );
 }
@@ -220,7 +248,6 @@ void DataManager::load_test_data( const string &filename ) {
 }
 
 void DataManager::load_data( const string &filename, DataStore &dataStore ) {
-    int iNumFields = static_cast<int>(numFields);
 
     CSVReader csvReader( filename );
 
@@ -243,11 +270,11 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
         nominalValues.push_back(ns);
     }
 
-    double **min_max = new double*[iNumFields];
-    for ( int f = 0; f < iNumFields; f++ ) {
-        min_max[f] = new double[2];
-        min_max[f][0] =  numeric_limits<double>::max();
-        min_max[f][1] = -numeric_limits<double>::max();
+    double **real_min_max = new double*[real_dimensions];
+    for ( int r = 0; r < real_dimensions; r++ ) {
+        real_min_max[r] = new double[2];
+        real_min_max[r][0] =  numeric_limits<double>::max();
+        real_min_max[r][1] = -numeric_limits<double>::max();
     }
 
     dimensions = new NoirDimensions( nominal_dimensions, ordinal_dimensions,
@@ -316,9 +343,12 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             } else {
                 to_numeric( value_str, value );
             }
+
+            if ( value < 0.0 ) {
+                value = (intervalPeriods[i]+value);
+            }
+            value = fmod(value, intervalPeriods[i]);
             point->set_interval_coordinate( i, value );
-            if ( value < min_max[i][0] ) min_max[i][0] = value;
-            if ( value > min_max[i][1] ) min_max[i][1] = value;
         }
 
         // Get the real valued features
@@ -332,8 +362,8 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
                 to_numeric( value_str, value );
             }
             point->set_real_coordinate( r, value );
-            if ( value < min_max[r][0] ) min_max[r][0] = value;
-            if ( value > min_max[r][1] ) min_max[r][1] = value;
+            if ( value < real_min_max[r][0] ) real_min_max[r][0] = value;
+            if ( value > real_min_max[r][1] ) real_min_max[r][1] = value;
         }
 
         dataStore.add( point );
@@ -358,10 +388,14 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             enclosure->set_ordinal_boundaries(o, -1, max );
         }
 
+        for ( int i = 0; i < dimensions->interval; i++ ) {
+            enclosure->set_interval_boundaries(i, 0.0, intervalPeriods[i] );
+        }
+
 
         for ( int r = 0; r < dimensions->real; r++ ) {
-            double min =  min_max[r][0];
-            double max =  min_max[r][1];
+            double min =  real_min_max[r][0];
+            double max =  real_min_max[r][1];
 
             if ( min > 0.0 ) {
                 min *= ilambda;
@@ -382,9 +416,9 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
     // clean up our temporary storage
     for ( int c = 0; c < dimensions->real; c++ ) {
-        delete[] min_max[c];
+        delete[] real_min_max[c];
     }
-    delete[] min_max;
+    delete[] real_min_max;
 };
 
 void DataManager::partition_training_data( const int &num_folds,

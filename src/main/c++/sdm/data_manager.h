@@ -128,6 +128,7 @@ class DataManager {
     std::vector<int> realFields;
     std::vector<NominalScale*> nominalValues;
     std::vector<NominalScale*> ordinalValues;
+    std::vector<double> intervalPeriods;
     size_t numFields;
     int idField;
     int colorField;
@@ -153,6 +154,7 @@ class DataManager {
                               Container &values );
 
     void read_ordinal_values(const util::Properties &parameters);
+    void read_interval_periods(const util::Properties &parameters);
 };
 
 }   // namespace sdm
