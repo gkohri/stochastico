@@ -57,7 +57,8 @@ class NoirSpace {
     /*
      * Set lower and upper boundaries for the specified ordinal coordinate.
      */
-    void set_ordinal_boundaries(const int &coordinate, int lower, int upper) {
+    void set_ordinal_boundaries(const int &coordinate, double lower, 
+                                                                double upper) {
         ordinal_boundaries[coordinate][0] = lower;
         ordinal_boundaries[coordinate][1] = upper;
     }
@@ -66,7 +67,7 @@ class NoirSpace {
      * Retrieves the boundaries for the specified ordinal coordinate
      */
     void get_ordinal_boundaries(const int &coordinate, 
-                                 int &lower, int &upper) const {
+                                 double &lower, double &upper) const {
         lower = ordinal_boundaries[coordinate][0];
         upper = ordinal_boundaries[coordinate][1];
     }
@@ -132,7 +133,7 @@ class NoirSpace {
     double get_diameter();
 
  private:
-    int    **ordinal_boundaries;
+    double **ordinal_boundaries;
     double **interval_boundaries;
     double *interval_periods;
     double **real_boundaries;

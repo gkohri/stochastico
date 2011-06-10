@@ -330,7 +330,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
             int value = ordinalValues[o]->transcribe( value_str );
 
-            point->set_ordinal_coordinate( o, value );
+            point->set_ordinal_coordinate( o, static_cast<double>(value) );
         }
 
         // Get the interval valued features
@@ -348,6 +348,9 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
                 value = (intervalPeriods[i]+value);
             }
             value = fmod(value, intervalPeriods[i]);
+
+            // normalize all periods to run between 0 and 1
+            value /= intervalPeriods[i];
             point->set_interval_coordinate( i, value );
         }
 
@@ -384,12 +387,14 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
         }
 
         for ( int o = 0; o < dimensions->ordinal; o++ ) {
-            int max = ordinalValues[o]->size() + 1;
-            enclosure->set_ordinal_boundaries(o, -1, max );
+            //int max = ordinalValues[o]->size() + 1;
+            //double dmax = static_cast<double>(max);
+            enclosure->set_ordinal_boundaries(o, 0.0, 1.0 );
         }
 
         for ( int i = 0; i < dimensions->interval; i++ ) {
-            enclosure->set_interval_boundaries(i, 0.0, intervalPeriods[i] );
+            //enclosure->set_interval_boundaries(i, 0.0, intervalPeriods[i] );
+            enclosure->set_interval_boundaries(i, 0.0, 1.0 );
         }
 
 
@@ -402,17 +407,38 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             } else {
                 min *= lambda;
             }
+            real_min_max[r][0] = min;
 
             if ( max > 0.0 ) {
                 min *= lambda;
             } else {
                 max *= ilambda;
             }
+            real_min_max[r][1] = max;
 
-            enclosure->set_real_boundaries(r, min, max );
-
+            enclosure->set_real_boundaries(r, 0.0, 1.0 );
         }
     }
+
+    // Normalize the data. The interval dimensions are already normalized.
+
+    DataStore::iterator dit;
+    for (dit = trainingData.begin(); dit != trainingData.end(); ++dit) {
+        DataPoint *dataPoint = *dit;
+        for ( int r = 0; r < dimensions->real; r++ ) {
+            double min =  real_min_max[r][0];
+            double max =  real_min_max[r][1];
+            double rc = dataPoint->get_real_coordinate(r) - min;
+            rc /= (max - min);
+            dataPoint ->set_real_coordinate(r, rc);
+        }
+        for ( int o = 0; o < dimensions->ordinal; o++ ) {
+            double oc = dataPoint->get_ordinal_coordinate(o);
+            oc /= static_cast<double>(ordinalValues[o]->size());
+            dataPoint ->set_ordinal_coordinate(o, oc);
+        }
+    }
+
 
     // clean up our temporary storage
     for ( int c = 0; c < dimensions->real; c++ ) {

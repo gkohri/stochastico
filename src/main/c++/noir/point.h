@@ -59,21 +59,21 @@ class Point {
     /*
      * Retrieve the value of the specified ordinal coordinate.
      */
-    int const & get_ordinal_coordinate( const int &coordinate ) const {
+    double const & get_ordinal_coordinate( const int &coordinate ) const {
         return ordinals[coordinate];
     }
 
     /*
      * Set the specified ordinal coordinate to the specified value.
      */
-    void set_ordinal_coordinate( const int& coordinate, const int& value ){
+    void set_ordinal_coordinate( const int& coordinate, const double& value ){
         ordinals[coordinate] = value;
     }
 
     /*
      * Get a pointer to this point's array of ordinal coordinates.
      */
-    int const * get_ordinal_coordinates() const {
+    double const * get_ordinal_coordinates() const {
         return ordinals;
     }
 
@@ -126,7 +126,7 @@ class Point {
 
  private:
     int         *nominals;
-    int         *ordinals;
+    double      *ordinals;
     double      *intervals;
     double      *reals;
 

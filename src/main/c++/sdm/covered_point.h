@@ -72,11 +72,11 @@ class CoveredPoint {
         return point->get_nominal_coordinates();
     }
 
-    int const & get_ordinal_coordinate( const int &coordinate ) const {
+    double const & get_ordinal_coordinate( const int &coordinate ) const {
         return point->get_ordinal_coordinate(coordinate);
     }
 
-    int const * get_ordinal_coordinates() const {
+    double const * get_ordinal_coordinates() const {
         return point->get_ordinal_coordinates();
     }
 

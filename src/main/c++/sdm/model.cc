@@ -116,30 +116,27 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 
 // Select the Ordinal Dimensions
 
-    int iupper = 0.0;
-    int ilower = 0.0;
-
-    const int* ordinals = nexus->get_ordinal_coordinates();
+    const double* ordinals = nexus->get_ordinal_coordinates();
 
     for ( int o = 0; o < dimensions->ordinal; o++ ){
 
-        int coordinate = ordinals[o];
-        if ( coordinate == -1 ) continue;
+        double coordinate = ordinals[o];
+        if ( isnan( coordinate ) ) continue;
 
-        region.get_ordinal_boundaries( o, ilower, iupper );
+        region.get_ordinal_boundaries( o, lower, upper );
 
-        int radius = (iupper - ilower)/2;
+        int radius = (upper - lower)/2;
         if ( radius == 0 ) radius = 1;
 
         int rectUpper = coordinate;
         if ( rand->next() < up ) rectUpper += radius;
 
-        if ( rectUpper > iupper ) rectUpper = iupper;
+        if ( rectUpper > upper ) rectUpper = upper;
 
         int rectLower = coordinate;
         if ( rand->next() < up ) rectLower -= radius;
 
-        if ( rectLower < ilower ) rectLower = ilower;
+        if ( rectLower < lower ) rectLower = lower;
 
         ns->set_ordinal_boundaries( o, rectLower, rectUpper );
     }

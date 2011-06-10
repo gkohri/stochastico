@@ -38,11 +38,11 @@ NoirSpace::NoirSpace( const NoirDimensions *noir_dimensions ):
         allowed_nominals[n].clear();
     }
 
-    ordinal_boundaries = new int*[dimensions->ordinal];
+    ordinal_boundaries = new double*[dimensions->ordinal];
     for ( int o = 0; o < dimensions->ordinal; ++o ) {
-        ordinal_boundaries[o] = new int[2];
-        ordinal_boundaries[o][0] = -std::numeric_limits<int>::max();
-        ordinal_boundaries[o][1] =  std::numeric_limits<int>::max();
+        ordinal_boundaries[o] = new double[2];
+        ordinal_boundaries[o][0] = -std::numeric_limits<double>::max();
+        ordinal_boundaries[o][1] =  std::numeric_limits<double>::max();
     }
 
     interval_boundaries = new double*[dimensions->interval];
@@ -108,7 +108,7 @@ bool NoirSpace::in_closure( const Point *point ) const {
         if ( isnan(intervals[i]) ) continue;
         double lower = interval_boundaries[i][0];
         double upper = interval_boundaries[i][1];
-        double value = fmod(intervals[i], interval_periods[i]);
+        double value = intervals[i];
         if ( upper < lower ) {
             if ( !(lower <= value || value <= upper ) ) {
                 in_closure = false;
@@ -126,9 +126,9 @@ bool NoirSpace::in_closure( const Point *point ) const {
 
     // Check the ordinal cooordinates
 
-    const int* ordinals = point->get_ordinal_coordinates();
+    const double* ordinals = point->get_ordinal_coordinates();
     for ( int o = 0; o < dimensions->ordinal; ++o ) {
-        if ( ordinals[o] == -1 ) continue;
+        if ( isnan(ordinals[o]) ) continue;
         if ( ordinals[o] < ordinal_boundaries[o][0] ||
              ordinals[o] > ordinal_boundaries[o][1]   ) {
             in_closure = false;
@@ -171,8 +171,8 @@ double NoirSpace::get_diameter() {
 
         // The ordinals
         for ( int o = 0; o < dimensions->ordinal; ++o ) {
-            diameter += static_cast<double>(abs(ordinal_boundaries[o][1] - 
-                                                   ordinal_boundaries[o][0]));
+            diameter += fabs(ordinal_boundaries[o][1] - 
+                                                 ordinal_boundaries[o][0]);
         }
 
         // The nominals

@@ -27,7 +27,7 @@ Point::Point( const NoirDimensions *dimensions) :
               nominals(0), ordinals(0), intervals(0), reals(0) {
 
     nominals  = new int[dimensions->nominal];
-    ordinals  = new int[dimensions->ordinal];
+    ordinals  = new double[dimensions->ordinal];
     intervals = new double[dimensions->interval];
     reals     = new double[dimensions->real];
 
@@ -70,9 +70,9 @@ double Point::distance( const Point *p) const {
         dist += fabs(intervals[i] - p_intervals[i]);
     }
 
-    int const *p_ordinals = p->get_ordinal_coordinates();
+    double const *p_ordinals = p->get_ordinal_coordinates();
     for ( int o = 0; o < dimensions->ordinal; ++o ){
-        dist += static_cast<double>(abs(ordinals[o] - p_ordinals[o]));
+        dist += fabs(ordinals[o] - p_ordinals[o]);
     }
 
     int const *p_nominals = p->get_nominal_coordinates();
