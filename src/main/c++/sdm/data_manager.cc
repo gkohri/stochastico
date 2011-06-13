@@ -423,7 +423,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     // Normalize the data. The interval dimensions are already normalized.
 
     DataStore::iterator dit;
-    for (dit = trainingData.begin(); dit != trainingData.end(); ++dit) {
+    for (dit = dataStore.begin(); dit != dataStore.end(); ++dit) {
         DataPoint *dataPoint = *dit;
         for ( int r = 0; r < dimensions->real; r++ ) {
             double min =  real_min_max[r][0];

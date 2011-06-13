@@ -83,11 +83,17 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 // Select the Interval Dimensions
 
     const double* intervals = nexus->get_interval_coordinates();
+    const double* nn_intervals = 0;
+    if ( nn != 0 ) nn_intervals = nn->get_interval_coordinates();
 
     for ( int i = 0; i < dimensions->interval; i++ ){
 
         double coordinate = intervals[i];
         if ( isnan( coordinate ) ) continue;
+
+        double nn_diff = 0.0;
+        if ( nn_intervals != 0 && !isnan( nn_intervals[i] ) )
+            nn_diff = nn_intervals[i] - coordinate;
 
         region.get_interval_boundaries( i, lower, upper );
         double period = region.get_interval_period(i);
@@ -96,6 +102,7 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 
         double zu = radius*(lp + (up-lp)*rand->next());
         double rectUpper = coordinate + zu;
+        if ( nn_diff > 0.0 ) rectUpper += nn_diff;
 
         if ( rectUpper > period ) 
             rectUpper = rectUpper - period;
@@ -104,6 +111,7 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 
         double zl = radius*(lp + (up-lp)*rand->next());
         double rectLower = coordinate - zl;
+        if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
         if ( rectLower < 0.0 ) 
             rectLower = period+lower;
@@ -117,11 +125,17 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 // Select the Ordinal Dimensions
 
     const double* ordinals = nexus->get_ordinal_coordinates();
+    const double* nn_ordinals = 0;
+    if ( nn != 0 ) nn_ordinals = nn->get_ordinal_coordinates();
 
     for ( int o = 0; o < dimensions->ordinal; o++ ){
 
         double coordinate = ordinals[o];
         if ( isnan( coordinate ) ) continue;
+
+        double nn_diff = 0.0;
+        if ( nn_ordinals != 0 && !isnan( nn_ordinals[o] ) )
+            nn_diff = nn_ordinals[o] - coordinate;
 
         region.get_ordinal_boundaries( o, lower, upper );
 
@@ -130,11 +144,13 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 
         int rectUpper = coordinate;
         if ( rand->next() < up ) rectUpper += radius;
+        if ( nn_diff > 0.0 ) rectUpper += nn_diff;
 
         if ( rectUpper > upper ) rectUpper = upper;
 
         int rectLower = coordinate;
         if ( rand->next() < up ) rectLower -= radius;
+        if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
         if ( rectLower < lower ) rectLower = lower;
 
@@ -145,10 +161,17 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 // Select the Nominal Dimensions
 
     const int* nominals = nexus->get_nominal_coordinates();
+    const int* nn_nominals = 0;
+    if ( nn != 0 ) nn_nominals = nn->get_nominal_coordinates();
 
     for ( int n = 0; n < dimensions->nominal; ++n ){
         int coordinate = nominals[n];
         if ( coordinate == -1 ) continue;
+
+        ns->add_nominal( n, coordinate );
+
+        if ( nn_nominals != 0 && ! nn_nominals[n] != -1 )
+            ns->add_nominal( n, nn_nominals[n] );
 
         const set<int> allowed = region.get_nominals(n);
 

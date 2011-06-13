@@ -38,6 +38,16 @@ class NoirDimensions {
 
     virtual ~NoirDimensions() {}
 
+    NoirDimensions(const NoirDimensions &that) : nominal(that.nominal),
+                                                 ordinal(that.ordinal),
+                                                 interval(that.interval),
+                                                 real(that.real) {}
+
+    NoirDimensions& operator=(const NoirDimensions &that){
+        return *(new NoirDimensions(that));
+    }
+
+
     const int nominal;
     const int ordinal;
     const int interval;

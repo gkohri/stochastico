@@ -80,7 +80,10 @@ double Point::distance( const Point *p) const {
         dist += ( nominals[n] == p_nominals[n] ? 1.0 : 0.0 );
     }
 
-    return dist;
+    double norm = static_cast<double>(dimensions->real + dimensions->interval + 
+                                  dimensions->ordinal + dimensions->nominal);
+
+    return dist/norm;
 }
 
 }  // namespace noir

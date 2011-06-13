@@ -88,9 +88,11 @@ int main( int argc, char * argv[] ) {
 
     dataManager.init( parameters );
 
+    fprintf(stderr,"\n----%s----\n\n","loading the training data" );
     dataManager.load_training_data(
             parameters.get_property( string("Data::Training::Filename") ) );
 
+    fprintf(stderr,"\n----%s----\n\n","loading the test data" );
     dataManager.load_test_data(
             parameters.get_property( string("Data::Testing::Filename") ) );
 

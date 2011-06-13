@@ -43,7 +43,7 @@ class NoirSpace {
     /*
      * Adds a nominal value to the set of values for the specified coordinate.
      */
-    void add_nominal(const int &coordinate, int &nominal_value) {
+    void add_nominal(const int &coordinate, const int &nominal_value) {
         allowed_nominals[coordinate].insert(nominal_value);
     }
 
