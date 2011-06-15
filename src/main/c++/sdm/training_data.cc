@@ -23,6 +23,7 @@
 #include "sdm/covered_point.h"
 #include "sdm/data_store.h"
 #include "rng/random.h"
+#include "noir/noir_space.h"
 
 namespace sdm {
 
@@ -30,6 +31,8 @@ using std::map;
 using std::multiset;
 using std::pair;
 using std::vector;
+using noir::NoirSpace;
+using noir::Norm;
 
 TrainingData::~TrainingData (){
     vector<CoveredPoint*>::iterator pit;
@@ -75,11 +78,14 @@ void TrainingData::reorder(){
     pcOrderedData.clear();
     vector<CoveredPoint*>::iterator pit;
     for ( pit = pcData.begin(); pit != pcData.end(); ++pit){
+    //for ( pit = data.begin(); pit != data.end(); ++pit){
         pcOrderedData.insert(*pit);
     }
 }
 
 void TrainingData::find_nn(){
+    const Norm norm =
+                (*pcData.begin())->get_data_point()->noirSpace->norm;
     vector<CoveredPoint*>::iterator ipit;
     vector<CoveredPoint*>::iterator jpit;
     for ( ipit = pcData.begin(); ipit != pcData.end(); ++ipit){
@@ -87,7 +93,8 @@ void TrainingData::find_nn(){
         CoveredPoint *nnpoint = 0;
         for ( jpit = pcData.begin(); jpit != pcData.end(); ++jpit){
             if ( jpit == ipit ) continue;
-            double ijdist = (*ipit)->distance(*jpit);
+            double ijdist = norm( (*ipit)->get_data_point(), 
+                                    (*jpit)->get_data_point() );
             if ( ijdist < dist ) {
                 dist = ijdist;
                 nnpoint = *jpit;

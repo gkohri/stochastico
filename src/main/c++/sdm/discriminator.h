@@ -20,7 +20,7 @@
 #include <vector>
 #include <map>
 
-#include "noir/noir_space.h"
+#include "noir/orthotope.h"
 #include "sdm/data_store.h"
 #include "sdm/model.h"
 #include "sdm/training_data.h"
@@ -65,7 +65,7 @@ class Discriminator {
     /*
      * Set the boundaries for the learning stage
      */
-    void set_boundary( const noir::NoirSpace *boundary ){
+    void set_boundary( const noir::Orthotope *boundary ){
         this->boundary = boundary;
     }
 
@@ -101,6 +101,8 @@ class Discriminator {
      */
     void create_models_lc( const int &num_models, const int &num_attempts );
 
+    void create_models_rc( const int &num_models, const int &num_attempts );
+
     /*
      * Determine the probability that the specified point is a member of
      * the class specialized by this discriminator.
@@ -120,7 +122,7 @@ class Discriminator {
  private:
     TrainingData trainingData;
     std::vector<Model*> models;
-    const noir::NoirSpace *boundary;
+    const noir::Orthotope *boundary;
     rng::Random  *rand;
     double  numPrincipalColor;
     double  numOtherColor;

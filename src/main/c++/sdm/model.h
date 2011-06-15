@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "sdm/covered_point.h"
-#include "noir/noir_space.h"
+#include "noir/orthotope.h"
 #include "rng/random.h"
 
 namespace sdm {
@@ -31,14 +31,16 @@ namespace sdm {
  */
 class Model {
  public:
-
-    Model(const int &principal_color): spaces(),
-        fracPrincipal(0.0), fracOther(0.0), probNorm(1.0),
-        principalColor( principal_color),
-        numPrincipalColor(0), numOtherColor(0) {}
+    Model(const int &principal_color, const double &total_principal_colors,
+          const double &total_other_colors): spaces(),
+          charNorm(1.0),
+          totalPrincipalColors(total_principal_colors),
+          totalOtherColors(total_other_colors),
+          principalColor( principal_color),
+          numPrincipalColor(0.0), numOtherColor(0.0) {}
 
     virtual ~Model(){
-        std::vector<noir::NoirSpace*>::iterator hit;
+        std::vector<noir::Orthotope*>::iterator hit;
         for ( hit = spaces.begin(); hit != spaces.end(); ++hit ){
             delete (*hit);
         }
@@ -56,7 +58,7 @@ class Model {
      * contained by this model.
      */
     int get_num_principal_color() const {
-        return numPrincipalColor;
+        return static_cast<int>(numPrincipalColor);
     }
 
     /*
@@ -64,21 +66,25 @@ class Model {
      * contained by this model.
      */
     int get_num_other_color() const {
-        return numOtherColor;
+        return static_cast<int>(numOtherColor);
+    }
+
+    int get_num_spaces() const {
+        return static_cast<int>(spaces.size());
     }
 
     /*
      * Expands this model by creating a hyper-rectangle using the specified
      * nexus and nearest neighbor points.
      */
-    void expand( const noir::NoirSpace &region, CoveredPoint *nexus, 
+    void expand( const noir::Orthotope &region, CoveredPoint *nexus, 
                  CoveredPoint *nn, 
                  rng::Random *rand, const double &lp, const double &up );
 
     /*
      * Thickens the last hyper-rectangle in the model's list.
      */
-    void thicken( const noir::NoirSpace &region, rng::Random *rand,
+    void thicken( const noir::Orthotope &region, rng::Random *rand,
                  const double &frac );
 
     /*
@@ -102,26 +108,24 @@ class Model {
     bool covers( const CoveredPoint *p ) const;
     
     /*
-     * Informs this model that it has been accpeted by a discriminator
-     * which contains numPC points of principal color and numOC points of
-     * other colors.
+     * Evaluates the normalized characteristic function for the specified
+     * point with respect to this model.
+     * 
+     * X = (C(p) - g_frac)/(r_frac - g_frac)
+     * where: C(p) is 1 if point p is covered my this model and 0 otherwise
+     *        g_frac is the green fraction for this model
+     *        r_frac is the red fraction for this model
      */
-    void accepted( const double &numPC, const double &numOC );
-
-    /*
-     * Returns the probability that the specified point has the same color
-     * as this model's principal color.
-     */
-    double predict( const DataPoint *p);
+    double norm_char( const DataPoint *p);
 
  private:
-    std::vector<noir::NoirSpace*> spaces;
-    double fracPrincipal;
-    double fracOther;
-    double probNorm;
-    int principalColor;
-    int numPrincipalColor;
-    int numOtherColor;
+    std::vector<noir::Orthotope*> spaces;
+    double charNorm;
+    double totalPrincipalColors;
+    double totalOtherColors;
+    int    principalColor;
+    double numPrincipalColor;
+    double numOtherColor;
 };
 
 }   // end namespace sdm

@@ -14,32 +14,21 @@
  *  limitations under the License.
  */
 
-
-#include "noir/orthoplex.h"
-
-#include <cmath>
-#include <limits>
-#include <set>
+#ifndef NOIR_NORM_H
+#define NOIR_NORM_H
 
 namespace noir {
 
-using std::set;
+class Point;
 
-Orthoplex::Orthoplex( const NoirDimensions *noir_dimensions, 
-                      const double &radius ) : Point(noir_dimensions),
-                      radius(radius) {}
+/*
+ * An L1 norm for a Noir Space.
+ */
+struct Norm {
+    double operator()(const Point* p) const;
+    double operator()(const Point* x, const Point* y) const;
+};
 
-Orthoplex::~Orthoplex() {}
+}   // end namespace noir
 
-bool Orthoplex::in_closure( const Point *point ) const {
-
-    double dist = this->distance(point);
-
-    if ( dist > radius )
-        return false;
-    else
-        return true;
-}
-
-
-}  // namespace noir
+#endif   // NOIR_NORM_H

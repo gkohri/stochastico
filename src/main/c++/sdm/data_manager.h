@@ -21,8 +21,8 @@
 #include <string>
 #include <vector>
 
-#include "noir/noir_dimensions.h"
 #include "noir/noir_space.h"
+#include "noir/orthotope.h"
 #include "rng/random.h"
 #include "sdm/data_store.h"
 #include "sdm/model.h"
@@ -39,7 +39,7 @@ namespace sdm {
 class DataManager {
  public:
     DataManager():trainingData(), testData(), enclosure(0), folds(),
-                  delimiter(util::Delimiters::COMMA), colors(), dimensions(0),
+                  delimiter(util::Delimiters::COMMA), colors(), noirSpace(0),
                   nominalFields(), ordinalFields(), intervalFields(),
                   realFields(), nominalValues(), ordinalValues(),
                   numFields(2), idField(-1), colorField(1), 
@@ -103,7 +103,7 @@ class DataManager {
     /*
      * Returns the hyper-rectangle which encloses all the data.
      */
-    const noir::NoirSpace* get_enclosure() {
+    const noir::Orthotope* get_enclosure() {
         return enclosure;
     }
 
@@ -117,11 +117,11 @@ class DataManager {
  private:
     DataStore trainingData;
     DataStore testData;
-    noir::NoirSpace *enclosure;
+    noir::Orthotope *enclosure;
     std::vector<DataStore*> folds;
     std::string delimiter;
     NominalScale colors;
-    noir::NoirDimensions *dimensions;
+    noir::NoirSpace *noirSpace;
     std::vector<int> nominalFields;
     std::vector<int> ordinalFields;
     std::vector<int> intervalFields;

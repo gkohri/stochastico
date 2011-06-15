@@ -22,8 +22,8 @@
 #include <set>
 #include <vector>
 
-#include "noir/noir_dimensions.h"
 #include "noir/noir_space.h"
+#include "noir/orthotope.h"
 #include "rng/random.h"
 
 namespace sdm {
@@ -32,16 +32,16 @@ using std::numeric_limits;
 using std::set;
 using std::vector;
 
-using noir::NoirDimensions;
 using noir::NoirSpace;
+using noir::Orthotope;
 using rng::Random;
 
-void Model::expand( const NoirSpace &region, CoveredPoint *nexus, 
+void Model::expand( const Orthotope &region, CoveredPoint *nexus, 
                     CoveredPoint *nn, Random *rand,
                     const double &lp, const double &up ){
 
-    const NoirDimensions *dimensions = nexus->get_noir_dimension();
-    NoirSpace *ns = new NoirSpace( dimensions );
+    const NoirSpace *noirSpace = nexus->get_noir_space();
+    Orthotope *orthotope = new Orthotope( noirSpace );
 
     double upper = 0.0;
     double lower = 0.0;
@@ -52,7 +52,7 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
     const double* nn_reals = 0;
     if ( nn != 0 ) nn_reals = nn->get_real_coordinates();
 
-    for ( int r = 0; r < dimensions->real; r++ ){
+    for ( int r = 0; r < noirSpace->real; r++ ){
 
         double coordinate = reals[r];
         if ( isnan( coordinate ) ) continue;
@@ -77,7 +77,7 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 
         if ( rectLower < lower ) rectLower = lower;
 
-        ns->set_real_boundaries( r, rectLower, rectUpper );
+        orthotope->set_real_boundaries( r, rectLower, rectUpper );
     }
 
 // Select the Interval Dimensions
@@ -86,7 +86,7 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
     const double* nn_intervals = 0;
     if ( nn != 0 ) nn_intervals = nn->get_interval_coordinates();
 
-    for ( int i = 0; i < dimensions->interval; i++ ){
+    for ( int i = 0; i < noirSpace->interval; i++ ){
 
         double coordinate = intervals[i];
         if ( isnan( coordinate ) ) continue;
@@ -96,16 +96,15 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
             nn_diff = nn_intervals[i] - coordinate;
 
         region.get_interval_boundaries( i, lower, upper );
-        double period = region.get_interval_period(i);
 
-        double radius = period*0.5;
+        double radius = 0.5;
 
         double zu = radius*(lp + (up-lp)*rand->next());
         double rectUpper = coordinate + zu;
         if ( nn_diff > 0.0 ) rectUpper += nn_diff;
 
-        if ( rectUpper > period ) 
-            rectUpper = rectUpper - period;
+        if ( rectUpper > 1.0 ) 
+            rectUpper = rectUpper - 1.0;
         else if ( rectUpper > upper )
             rectUpper = upper;
 
@@ -114,11 +113,11 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
         if ( rectLower < 0.0 ) 
-            rectLower = period+lower;
+            rectLower = 1.0+lower;
         else if ( rectLower < lower )
             rectLower = lower;
 
-        ns->set_interval_boundaries( i, rectLower, rectUpper );
+        orthotope->set_interval_boundaries( i, rectLower, rectUpper );
     }
 
 
@@ -128,7 +127,7 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
     const double* nn_ordinals = 0;
     if ( nn != 0 ) nn_ordinals = nn->get_ordinal_coordinates();
 
-    for ( int o = 0; o < dimensions->ordinal; o++ ){
+    for ( int o = 0; o < noirSpace->ordinal; o++ ){
 
         double coordinate = ordinals[o];
         if ( isnan( coordinate ) ) continue;
@@ -139,22 +138,21 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
 
         region.get_ordinal_boundaries( o, lower, upper );
 
-        int radius = (upper - lower)/2;
-        if ( radius == 0 ) radius = 1;
+        double radius = (upper - lower)/2.0;
 
-        int rectUpper = coordinate;
+        double rectUpper = coordinate;
         if ( rand->next() < up ) rectUpper += radius;
         if ( nn_diff > 0.0 ) rectUpper += nn_diff;
 
         if ( rectUpper > upper ) rectUpper = upper;
 
-        int rectLower = coordinate;
+        double rectLower = coordinate;
         if ( rand->next() < up ) rectLower -= radius;
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
         if ( rectLower < lower ) rectLower = lower;
 
-        ns->set_ordinal_boundaries( o, rectLower, rectUpper );
+        orthotope->set_ordinal_boundaries( o, rectLower, rectUpper );
     }
 
 
@@ -164,56 +162,60 @@ void Model::expand( const NoirSpace &region, CoveredPoint *nexus,
     const int* nn_nominals = 0;
     if ( nn != 0 ) nn_nominals = nn->get_nominal_coordinates();
 
-    for ( int n = 0; n < dimensions->nominal; ++n ){
+    for ( int n = 0; n < noirSpace->nominal; ++n ){
         int coordinate = nominals[n];
         if ( coordinate == -1 ) continue;
+
+        const set<int> allowed = region.get_nominals(n);
+/*
+        // Odd, it seems to work better using a random selection of nominals
 
         ns->add_nominal( n, coordinate );
 
         if ( nn_nominals != 0 && ! nn_nominals[n] != -1 )
             ns->add_nominal( n, nn_nominals[n] );
 
-        const set<int> allowed = region.get_nominals(n);
-
+        int max_allowable = static_cast<int>(allowed.size()) - 2;
+*/
         int max_allowable = static_cast<int>(allowed.size());
 
         for ( int nn = 0; nn < max_allowable; ++nn) {
-            if ( rand->next() > up) continue;
-            ns->add_nominal( n, nn );
+            if ( rand->next() > up ) continue;
+            orthotope->add_nominal( n, nn );
         }
     }
 
 // Store the resulting space
 
-    spaces.push_back( ns );
+    spaces.push_back( orthotope );
 }
 
-void Model::thicken(const NoirSpace &region, Random *rand, const double &frac){
+void Model::thicken(const Orthotope &region, Random *rand, const double &frac){
 
-    NoirSpace *ns = spaces.back();
+    Orthotope *orthotope = spaces.back();
 
     double upper = 0.0;
     double lower = 0.0;
-    for ( int d = 0; d < region.dimensions->real; d++ ){
+    for ( int d = 0; d < region.noirSpace->real; d++ ){
         if ( rand->next() > frac ) continue;
 
         region.get_real_boundaries( d, lower, upper );
 
-        ns->set_real_boundaries( d, lower, upper );
+        orthotope->set_real_boundaries( d, lower, upper );
     }
 }
 
 bool Model::check_point( const CoveredPoint *p ){
-    vector<NoirSpace*>::const_iterator nsit;
+    vector<Orthotope*>::const_iterator nsit;
 
     bool covered = false;
     for ( nsit = spaces.begin(); nsit != spaces.end(); ++nsit ) {
         if ( (*nsit)->in_closure( p->get_data_point() ) ){
             if ( p->get_color() == principalColor ){
-                numPrincipalColor++;
+                ++numPrincipalColor;
                 covered = true;
             } else {
-                numOtherColor++;
+                ++numOtherColor;
             }
             break;
         }
@@ -223,7 +225,7 @@ bool Model::check_point( const CoveredPoint *p ){
 }
 
 bool Model::covers( const CoveredPoint *p ) const {
-    vector<NoirSpace*>::const_iterator nsit;
+    vector<Orthotope*>::const_iterator nsit;
 
     bool is_covered = false;
     for ( nsit = spaces.begin(); nsit != spaces.end(); ++nsit ) {
@@ -237,18 +239,12 @@ bool Model::covers( const CoveredPoint *p ) const {
 }
 
 void Model::clear_checked_points(){
-    numPrincipalColor = 0;
-    numOtherColor = 0;
+    numPrincipalColor = 0.0;
+    numOtherColor = 0.0;
 }
 
-void Model::accepted( const double &numPC, const double &numOC ){
-    fracPrincipal = static_cast<double>(numPrincipalColor)/numPC;
-    fracOther     = static_cast<double>(numOtherColor)/numOC;
-    probNorm     = 1.0/(fracPrincipal - fracOther);
-}
-
-double Model::predict( const DataPoint *p ){
-    vector<NoirSpace*>::const_iterator nsit;
+double Model::norm_char( const DataPoint *p ){
+    vector<Orthotope*>::const_iterator nsit;
 
     double characteristic = 0.0;
     for ( nsit = spaces.begin(); nsit != spaces.end(); ++nsit ) {
@@ -258,7 +254,9 @@ double Model::predict( const DataPoint *p ){
         }
     }
 
-    return ( (characteristic - fracOther)*probNorm );
+    double fracOther = numOtherColor/totalOtherColors;
+    return ( (characteristic - fracOther)/
+              (numPrincipalColor/totalPrincipalColors - fracOther) );
 }
 
 }  // namespace sdm

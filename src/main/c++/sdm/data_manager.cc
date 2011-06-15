@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "noir/noir_dimensions.h"
 #include "noir/noir_space.h"
+#include "noir/orthotope.h"
 #include "rng/random.h"
 #include "sdm/data_point.h"
 #include "util/functions.h"
@@ -42,8 +42,8 @@ using std::transform;
 using std::vector;
 using std::numeric_limits;
 
-using noir::NoirDimensions;
 using noir::NoirSpace;
+using noir::Orthotope;
 using rng::Random;
 using util::CSVReader;
 using util::to_numeric;
@@ -62,7 +62,7 @@ DataManager::~DataManager(){
         delete nominalValues[n];
     }
     delete enclosure;
-    delete dimensions;
+    delete noirSpace;
 }
 
 void DataManager::init( const Properties &parameters ) {
@@ -277,8 +277,8 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
         real_min_max[r][1] = -numeric_limits<double>::max();
     }
 
-    dimensions = new NoirDimensions( nominal_dimensions, ordinal_dimensions,
-                                     interval_dimensions, real_dimensions );
+    noirSpace = new NoirSpace( nominal_dimensions, ordinal_dimensions,
+                               interval_dimensions, real_dimensions );
 
     int id = 0;
     double value = 0.0;
@@ -304,7 +304,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             id++;
         }
 
-        DataPoint *point = new DataPoint( id, color, dimensions);
+        DataPoint *point = new DataPoint( id, color, noirSpace);
 
         // Get the nominal valued features
         for ( int n = 0; n < nominal_dimensions; ++n ) {
@@ -344,13 +344,13 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
                 to_numeric( value_str, value );
             }
 
-            if ( value < 0.0 ) {
-                value = (intervalPeriods[i]+value);
+            // normalize all periods to run between 0 and 1
+            while ( value < 0.0 ) {
+                value += intervalPeriods[i];
             }
             value = fmod(value, intervalPeriods[i]);
-
-            // normalize all periods to run between 0 and 1
             value /= intervalPeriods[i];
+
             point->set_interval_coordinate( i, value );
         }
 
@@ -377,28 +377,27 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     double lambda = 1.01;
     double ilambda = 0.99;
     if ( enclosure == 0 ) {
-        enclosure = new NoirSpace( dimensions );
+        enclosure = new Orthotope( noirSpace );
 
-        for ( int n = 0; n < dimensions->nominal; n++ ) {
+        for ( int n = 0; n < noirSpace->nominal; n++ ) {
             int max_nominal = nominalValues[n]->size();
             for ( int nn = 0; nn < max_nominal; nn++ ) {
                 enclosure->add_nominal(n, nn);
             }
         }
 
-        for ( int o = 0; o < dimensions->ordinal; o++ ) {
+        for ( int o = 0; o < noirSpace->ordinal; o++ ) {
             //int max = ordinalValues[o]->size() + 1;
             //double dmax = static_cast<double>(max);
             enclosure->set_ordinal_boundaries(o, 0.0, 1.0 );
         }
 
-        for ( int i = 0; i < dimensions->interval; i++ ) {
-            //enclosure->set_interval_boundaries(i, 0.0, intervalPeriods[i] );
+        for ( int i = 0; i < noirSpace->interval; i++ ) {
             enclosure->set_interval_boundaries(i, 0.0, 1.0 );
         }
 
 
-        for ( int r = 0; r < dimensions->real; r++ ) {
+        for ( int r = 0; r < noirSpace->real; r++ ) {
             double min =  real_min_max[r][0];
             double max =  real_min_max[r][1];
 
@@ -425,14 +424,14 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     DataStore::iterator dit;
     for (dit = dataStore.begin(); dit != dataStore.end(); ++dit) {
         DataPoint *dataPoint = *dit;
-        for ( int r = 0; r < dimensions->real; r++ ) {
+        for ( int r = 0; r < noirSpace->real; r++ ) {
             double min =  real_min_max[r][0];
             double max =  real_min_max[r][1];
             double rc = dataPoint->get_real_coordinate(r) - min;
             rc /= (max - min);
             dataPoint ->set_real_coordinate(r, rc);
         }
-        for ( int o = 0; o < dimensions->ordinal; o++ ) {
+        for ( int o = 0; o < noirSpace->ordinal; o++ ) {
             double oc = dataPoint->get_ordinal_coordinate(o);
             oc /= static_cast<double>(ordinalValues[o]->size());
             dataPoint ->set_ordinal_coordinate(o, oc);
@@ -441,7 +440,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
 
     // clean up our temporary storage
-    for ( int c = 0; c < dimensions->real; c++ ) {
+    for ( int c = 0; c < noirSpace->real; c++ ) {
         delete[] real_min_max[c];
     }
     delete[] real_min_max;

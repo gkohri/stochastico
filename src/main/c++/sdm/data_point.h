@@ -17,7 +17,7 @@
 #ifndef SDM_DATA_POINT_H
 #define SDM_DATA_POINT_H
 
-#include "noir/noir_dimensions.h"
+#include "noir/noir_space.h"
 #include "noir/point.h"
 
 namespace sdm {
@@ -29,8 +29,8 @@ namespace sdm {
 class DataPoint : public noir::Point{
  public:
     DataPoint( const int& id, const int& color, 
-               const noir::NoirDimensions *dimensions ) : 
-               noir::Point(dimensions), id(id), color(color) {}
+               const noir::NoirSpace *space ) : 
+               noir::Point(space), id(id), color(color) {}
 
     virtual ~DataPoint() {}
 

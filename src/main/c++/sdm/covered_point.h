@@ -17,7 +17,9 @@
 #ifndef SDM_COVERED_POINT_H
 #define SDM_COVERED_POINT_H
 
-#include "noir/noir_dimensions.h"
+#include <functional>
+
+#include "noir/noir_space.h"
 #include "sdm/data_point.h"
 
 namespace sdm {
@@ -60,8 +62,8 @@ class CoveredPoint {
         ++coverage;
     }
 
-    const noir::NoirDimensions* get_noir_dimension() const {
-        return point->dimensions;
+    const noir::NoirSpace* get_noir_space() const {
+        return point->noirSpace;
     }
 
     int const & get_nominal_coordinate( const int &coordinate ) const {
@@ -94,10 +96,6 @@ class CoveredPoint {
 
     double const * get_real_coordinates() const {
         return point->get_real_coordinates();
-    }
-
-    double distance( CoveredPoint *cp) const {
-        return point->distance(cp->get_data_point());
     }
 
     struct CompareCoverage :

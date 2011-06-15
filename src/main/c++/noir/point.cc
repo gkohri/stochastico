@@ -22,28 +22,28 @@
 
 namespace noir {
 
-Point::Point( const NoirDimensions *dimensions) :
-              dimensions(dimensions),
+Point::Point( const NoirSpace *noirSpace) :
+              noirSpace(noirSpace),
               nominals(0), ordinals(0), intervals(0), reals(0) {
 
-    nominals  = new int[dimensions->nominal];
-    ordinals  = new double[dimensions->ordinal];
-    intervals = new double[dimensions->interval];
-    reals     = new double[dimensions->real];
+    nominals  = new int[noirSpace->nominal];
+    ordinals  = new double[noirSpace->ordinal];
+    intervals = new double[noirSpace->interval];
+    reals     = new double[noirSpace->real];
 
-    for ( int n = 0; n < dimensions->nominal; ++n ){
+    for ( int n = 0; n < noirSpace->nominal; ++n ){
         nominals[n] = 0;
     }
 
-    for ( int o = 0; o < dimensions->ordinal; ++o ){
+    for ( int o = 0; o < noirSpace->ordinal; ++o ){
         ordinals[o] = 0;
     }
 
-    for ( int i = 0; i < dimensions->interval; ++i ){
+    for ( int i = 0; i < noirSpace->interval; ++i ){
         intervals[i] = 0.0;
     }
 
-    for ( int r = 0; r < dimensions->real; ++r ){
+    for ( int r = 0; r < noirSpace->real; ++r ){
         reals[r] = 0.0;
     }
 }
@@ -53,37 +53,6 @@ Point::~Point() {
     delete[] ordinals;
     delete[] intervals;
     delete[] reals;
-}
-
-double Point::distance( const Point *p) const {
-    double dist = 0.0;
-
-    double const *p_reals = p->get_real_coordinates();
-    for ( int r = 0; r < dimensions->real; ++r ){
-        if ( isnan(reals[r]) || isnan(p_reals[r]) ) continue; 
-        dist += fabs(reals[r] - p_reals[r]);
-    }
-
-    double const *p_intervals = p->get_interval_coordinates();
-    for ( int i = 0; i < dimensions->interval; ++i ){
-        if ( isnan(intervals[i]) || isnan(p_intervals[i]) ) continue; 
-        dist += fabs(intervals[i] - p_intervals[i]);
-    }
-
-    double const *p_ordinals = p->get_ordinal_coordinates();
-    for ( int o = 0; o < dimensions->ordinal; ++o ){
-        dist += fabs(ordinals[o] - p_ordinals[o]);
-    }
-
-    int const *p_nominals = p->get_nominal_coordinates();
-    for ( int n = 0; n < dimensions->nominal; ++n ){
-        dist += ( nominals[n] == p_nominals[n] ? 1.0 : 0.0 );
-    }
-
-    double norm = static_cast<double>(dimensions->real + dimensions->interval + 
-                                  dimensions->ordinal + dimensions->nominal);
-
-    return dist/norm;
 }
 
 }  // namespace noir

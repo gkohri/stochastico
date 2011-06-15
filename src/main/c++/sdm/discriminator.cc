@@ -62,6 +62,115 @@ void Discriminator::check_data_consistency(){
     numOtherColor = static_cast<double>(trainingData.get_num_other_color());
 }
 
+void Discriminator::create_models_rc( const int &num_models, 
+                                      const int &num_attempts ){
+    check_data_consistency();
+    trainingData.find_nn() ;
+
+    trainingData.reorder();
+
+    vector<CoveredPoint *>::iterator pit;
+
+    numUnfinished = 0;
+
+    bool not_finished = false;
+    for ( int m = 0; m < num_models; m++ ){
+        double lpf = lowerFrac;
+        double upf = upperFrac;
+
+        double lower_cover = 0.1*static_cast<double>(trainingData.size());
+        double upper_cover = 0.3*static_cast<double>(trainingData.size());
+
+        double norm = 1.0;
+        if ( models.size() > 0 ) {
+            norm = 1.0/static_cast<double>(models.size());
+        }
+
+        //Generate a random model
+        Model *model = new Model(principalColor, numPrincipalColor, 
+                                 numOtherColor);
+
+        //Add points to the model
+        int t;
+        int rank = 0;
+        for ( t = 0; t < num_attempts; t++ ){
+            //Expand the model by adding a new hyper-rectangle
+            CoveredPoint *nexus = trainingData.get_least_covered(rank);
+            CoveredPoint *nn = trainingData.get_nn(nexus) ;
+            model->expand( *boundary, nexus, nn, rand, lpf, upf );
+
+            if ( !(model->covers(nexus)) ) {
+                fprintf(stderr,"nexus not covered!\n");
+            }
+            if ( nexus == 0) {
+                fprintf(stderr,"nexus does not exist!\n");
+            }
+            if ( nn == 0) {
+                fprintf(stderr,"neighbor does not exist!\n");
+            }
+            if ( !(model->covers(nn)) ) {
+                fprintf(stderr,"neighbor not covered!\n");
+            }
+
+            //Check the coverage of points in this model
+            model->clear_checked_points();
+            for (pit = trainingData.begin(); pit < trainingData.end(); ++pit){
+                model->check_point( *pit );
+            }
+
+            double model_pc = 
+                        static_cast<double>(model->get_num_principal_color());
+            double model_oc = 
+                        static_cast<double>(model->get_num_other_color());
+
+            double model_total = model_pc + model_oc;
+
+            fprintf(stderr,"c: %d t:  %d  ns:  %d total: %f  %f  %f %f %f \n",
+                principalColor, t, model->get_num_spaces(),
+                model_total, numPrincipalColor,numOtherColor,
+                    lower_cover, upper_cover);
+
+            if ( model_total < lower_cover ){
+                ++rank;
+                continue;
+            }
+            if ( model_total > upper_cover ) break;
+
+
+            double ratio_diff = model_pc/numPrincipalColor - 
+                                                model_oc/numOtherColor;
+
+            //Check for richness
+            if ( ratio_diff >= enrichmentLevel ){
+                not_finished = false;
+                for (pit = trainingData.begin(); pit < trainingData.end(); 
+                                                                    ++pit){
+                    if ( (*pit)->get_color() == principalColor ) {
+                        (*pit)->increment_coverage(1.0);
+                    }
+                }
+                models.push_back( model );
+                trainingData.reorder();
+                break;
+            }
+
+            ++rank;
+        }
+
+        //if could not find an enriched model after max tries, delete the
+        //   model and try again with different points.
+        if ( not_finished ){
+            delete model;
+            if ( t == num_attempts ){
+                ++numUnfinished;
+            }
+        }
+    }
+
+    training_data_prob_distribution();
+};
+
+
 void Discriminator::create_models_lc( const int &num_models, 
                                       const int &num_attempts ){
 
@@ -98,7 +207,8 @@ void Discriminator::create_models_lc( const int &num_models,
         }
 
         //Generate a random model
-        Model *model = new Model(principalColor);
+        Model *model = new Model(principalColor, numPrincipalColor, 
+                                 numOtherColor);
 
         //Make max_attempts to find a new model
         int t;
@@ -147,14 +257,13 @@ void Discriminator::create_models_lc( const int &num_models,
                 //Check for uniformity only if we are not using the least
                 //covered point
                 if (!test_cov || avg_mod_cov < avg_cov || models.size() == 0){
-                    model->accepted( numPrincipalColor, numOtherColor );
                     not_finished = false;
                     double avg_cov_m = 0.0;
                     for (pit = trainingData.begin(); pit < trainingData.end(); 
                                                                     ++pit){
                         if ( (*pit)->get_color() == principalColor ) {
                             double inc = 
-                                    model->predict((*pit)->get_data_point());
+                                    model->norm_char((*pit)->get_data_point());
                             (*pit)->increment_coverage(inc);
                             double cov =  (*pit)->get_coverage()*norm;
                             avg_cov_m += cov;
@@ -253,7 +362,7 @@ double Discriminator::test( const DataPoint* point ){
     unsigned num_models = models.size();
     double prediction = 0.0;
     for (unsigned m = 0; m < num_models; ++m){
-        prediction += models[m]->predict( point );
+        prediction += models[m]->norm_char( point );
     }
     prediction /= static_cast<double>(num_models);
 

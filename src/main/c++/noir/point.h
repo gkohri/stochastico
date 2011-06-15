@@ -17,7 +17,7 @@
 #ifndef NOIR_POINT_H
 #define NOIR_POINT_H
 
-#include "noir/noir_dimensions.h"
+#include "noir/noir_space.h"
 
 namespace noir {
 
@@ -27,9 +27,9 @@ namespace noir {
  */
 class Point {
  public:
-    noir::NoirDimensions const * const dimensions;
+    noir::NoirSpace const * const noirSpace;
 
-    Point(const NoirDimensions *dimensions); 
+    Point(const NoirSpace *noirSpace); 
 
     virtual ~Point();
 
@@ -119,10 +119,6 @@ class Point {
         return reals;
     }
 
-    /*
-     * Determine the distance between this point and the specified point.
-     */
-    double distance( const Point *p) const;
 
  private:
     int         *nominals;

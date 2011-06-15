@@ -17,6 +17,12 @@
 Results using either a 10-Fold Cross-Validation or, if an explicit test set was
 included, an evaluation of the test set.
 
+NOTE: These results are only representative. Although cross-validation is the
+standard techique for testing the generalization accuracy of a machine 
+learning algorithm given a single training set, there is no known, closed-form
+expression for the generalization error estimate. The error rates shown are
+averages taken over the 10 cross-validation checks.
+
 Data Set     Accuracy   Error Rate
 
 Iris          0.97        0.03 

@@ -23,7 +23,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#include "noir/noir_space.h"
+#include "noir/orthotope.h"
 #include "sdm/discriminator.h"
 #include "sdm/data_point.h"
 #include "rng/mt19937.h"
@@ -41,7 +41,7 @@ namespace sdm {
 using std::string;
 using std::vector;
 
-using noir::NoirSpace;
+using noir::Orthotope;
 using rng::Random;
 using rng::RandomFactory;
 using stat::ROC;
@@ -221,7 +221,7 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
 void SDMachine::create_discriminators(DataManager &dataManager) {
 
     const int num_colors = dataManager.get_num_colors();
-    const NoirSpace *enclosure = dataManager.get_enclosure();
+    const Orthotope *enclosure = dataManager.get_enclosure();
 
     RandomFactory *prf = RandomFactory::get_instance();
 
@@ -247,6 +247,7 @@ void SDMachine::ready_discriminator(Discriminator *dis,
         dis->add_training_data( dataManager.get_partition( fold ) );
     }
     dis->create_models_lc( numModels, numAttempts);
+    //dis->create_models_rc( numModels, numAttempts);
 }
 
 void SDMachine::ready_discriminators(DataManager &dataManager,
