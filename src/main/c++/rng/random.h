@@ -28,12 +28,12 @@ class Random {
     /**
      * Generate the next random number uniformly in the range [0,1]
      */
-    virtual double next(void) = 0;
+    virtual double next() = 0;
 
     /**
      * Generate the next random number uniformly in the range [0,2^32]
      */
-    virtual unsigned next_uint(void) = 0;
+    virtual unsigned next_uint() = 0;
 
     /**
      * Generate the next random integer uniformly in the range:

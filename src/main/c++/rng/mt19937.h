@@ -98,7 +98,7 @@ class MTwist: public virtual Random {
 
 //  Generate the next random integer uniformly in the closed interval [0,2^32-1].
 
-    ulong next_uint(void) {
+    ulong next_uint() {
         ulong y;
 
         // generate N words at one time
@@ -150,13 +150,13 @@ class MTwist: public virtual Random {
 
 // Generate the next random number in the closed interval [0,1].
 
-    double next(void) {
+    double next() {
         return ( static_cast<double>(next_uint())*(1.0/4294967295.0) );
     }
 
 // Generate the next random number in the open interval (0,1)
 
-    double next_open(void) {
+    double next_open() {
         return ( (next() + 0.5)*(1.0/4294967296.0) );
     }
 

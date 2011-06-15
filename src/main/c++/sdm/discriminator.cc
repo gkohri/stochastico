@@ -25,6 +25,7 @@
 #include "util/functions.h"
 #include "util/csv.h"
 #include "util/invalid_input_error.h"
+#include "sdm/orthotope_model.h"
 
 namespace sdm{
 
@@ -87,7 +88,7 @@ void Discriminator::create_models_rc( const int &num_models,
         }
 
         //Generate a random model
-        Model *model = new Model(principalColor, numPrincipalColor, 
+        Model *model = new OrthotopeModel(principalColor, numPrincipalColor, 
                                  numOtherColor);
 
         //Add points to the model
@@ -126,7 +127,7 @@ void Discriminator::create_models_rc( const int &num_models,
             double model_total = model_pc + model_oc;
 
             fprintf(stderr,"c: %d t:  %d  ns:  %d total: %f  %f  %f %f %f \n",
-                principalColor, t, model->get_num_spaces(),
+                principalColor, t, model->get_num_elements(),
                 model_total, numPrincipalColor,numOtherColor,
                     lower_cover, upper_cover);
 
@@ -207,7 +208,7 @@ void Discriminator::create_models_lc( const int &num_models,
         }
 
         //Generate a random model
-        Model *model = new Model(principalColor, numPrincipalColor, 
+        Model *model = new OrthotopeModel(principalColor, numPrincipalColor, 
                                  numOtherColor);
 
         //Make max_attempts to find a new model
@@ -263,7 +264,8 @@ void Discriminator::create_models_lc( const int &num_models,
                                                                     ++pit){
                         if ( (*pit)->get_color() == principalColor ) {
                             double inc = 
-                                    model->norm_char((*pit)->get_data_point());
+                                    model->characteristic(
+                                                (*pit)->get_data_point());
                             (*pit)->increment_coverage(inc);
                             double cov =  (*pit)->get_coverage()*norm;
                             avg_cov_m += cov;
@@ -362,7 +364,7 @@ double Discriminator::test( const DataPoint* point ){
     unsigned num_models = models.size();
     double prediction = 0.0;
     for (unsigned m = 0; m < num_models; ++m){
-        prediction += models[m]->norm_char( point );
+        prediction += models[m]->characteristic( point );
     }
     prediction /= static_cast<double>(num_models);
 

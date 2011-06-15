@@ -34,7 +34,7 @@ class Zran : public virtual Random {
 
 /// Generates the next random number in the sequence
 
-    unsigned  next_uint(void) {
+    unsigned  next_uint() {
         int s;
 
         if (y > x + c) {
@@ -52,7 +52,7 @@ class Zran : public virtual Random {
 /** Generates the next random number in the sequence and 
     returns its double precision representation. */
 
-    double next(void) {
+    double next() {
         return ( static_cast<double>(next_uint())*(1.0/4294967295.0) );
     }
 

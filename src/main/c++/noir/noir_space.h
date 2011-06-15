@@ -22,6 +22,7 @@
 namespace noir {
 
 class Point;
+
 /*
  * A Noir Space is Banach space formed by the Cartesian product of Nominal,
  * Ordinal, periodic Interval and Real sets, together with a suitable metric.
@@ -56,6 +57,17 @@ class NoirSpace {
 
     Norm norm;
 
+};
+
+class ClosedSpace {
+ public:
+    /*
+     * Determines whether or the not the specified point is contained within
+     * the closure of this Noir space.
+     */
+    virtual bool in_closure( const Point *point ) const = 0;
+
+    virtual ~ClosedSpace() {}
 };
 
 }   // end namespace noir

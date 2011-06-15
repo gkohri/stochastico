@@ -27,10 +27,9 @@ namespace noir {
 
 /*
  * An Ball in Noir Space is defined by a point, a radius and the metric used
- * to define the space. The balls are closed, i.e., the surface points are
- * included.
+ * to define the space.
  */
-class Ball {
+class Ball : public ClosedSpace {
  public:
     noir::NoirSpace const * const noirSpace;
 
@@ -55,7 +54,7 @@ class Ball {
 
     /*
      * Determines whether or the not the specified point is contained within
-     * the closure of this Orthoplex.
+     * the closure of this ball.
      */
     bool in_closure( const Point *point ) const;
 

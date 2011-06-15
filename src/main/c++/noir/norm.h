@@ -25,7 +25,14 @@ class Point;
  * An L1 norm for a Noir Space.
  */
 struct Norm {
-    double operator()(const Point* p) const;
+    /*
+     * Calculate the L1 norm for the vector pointing to the specified point
+     */
+    double operator()(const Point* x) const;
+
+    /*
+     * Calculate distance between the specified points using the L1 norm.
+     */
     double operator()(const Point* x, const Point* y) const;
 };
 

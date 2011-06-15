@@ -21,26 +21,26 @@
 #include <vector>
 
 #include "sdm/covered_point.h"
+#include "noir/noir_space.h"
 #include "noir/orthotope.h"
 #include "rng/random.h"
 
 namespace sdm {
 
 /*
- * This Model implementation consists of a uninion of hyper-rectangles
+ * This Model implementation consists of a union of Orthotopes.
  */
 class Model {
  public:
     Model(const int &principal_color, const double &total_principal_colors,
           const double &total_other_colors): spaces(),
-          charNorm(1.0),
           totalPrincipalColors(total_principal_colors),
           totalOtherColors(total_other_colors),
-          principalColor( principal_color),
-          numPrincipalColor(0.0), numOtherColor(0.0) {}
+          numPrincipalColor(0.0), numOtherColor(0.0),
+          principalColor( principal_color) {}
 
     virtual ~Model(){
-        std::vector<noir::Orthotope*>::iterator hit;
+        std::vector<noir::ClosedSpace*>::iterator hit;
         for ( hit = spaces.begin(); hit != spaces.end(); ++hit ){
             delete (*hit);
         }
@@ -69,7 +69,7 @@ class Model {
         return static_cast<int>(numOtherColor);
     }
 
-    int get_num_spaces() const {
+    int get_num_elements() const {
         return static_cast<int>(spaces.size());
     }
 
@@ -77,15 +77,15 @@ class Model {
      * Expands this model by creating a hyper-rectangle using the specified
      * nexus and nearest neighbor points.
      */
-    void expand( const noir::Orthotope &region, CoveredPoint *nexus, 
-                 CoveredPoint *nn, 
-                 rng::Random *rand, const double &lp, const double &up );
+    virtual void expand( const noir::Orthotope &region, CoveredPoint *nexus,
+                         CoveredPoint *nn, rng::Random *rand, 
+                         const double &lp, const double &up ) = 0;
 
     /*
      * Thickens the last hyper-rectangle in the model's list.
      */
-    void thicken( const noir::Orthotope &region, rng::Random *rand,
-                 const double &frac );
+    virtual void thicken( const noir::Orthotope &region, rng::Random *rand,
+                 const double &frac ) = 0;
 
     /*
      * Resets the registers used to track checked points.
@@ -116,16 +116,17 @@ class Model {
      *        g_frac is the green fraction for this model
      *        r_frac is the red fraction for this model
      */
-    double norm_char( const DataPoint *p);
+    double characteristic( const DataPoint *p);
+
+ protected:
+    std::vector<noir::ClosedSpace*> spaces;
 
  private:
-    std::vector<noir::Orthotope*> spaces;
-    double charNorm;
     double totalPrincipalColors;
     double totalOtherColors;
-    int    principalColor;
     double numPrincipalColor;
     double numOtherColor;
+    int    principalColor;
 };
 
 }   // end namespace sdm

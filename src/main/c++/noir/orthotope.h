@@ -32,7 +32,7 @@ namespace noir {
  * and real values.
  * 
  */
-class Orthotope {
+class Orthotope : public ClosedSpace {
  public:
     // The space in which this orthotope lives
     NoirSpace const * const noirSpace;
