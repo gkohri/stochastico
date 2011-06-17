@@ -56,6 +56,26 @@ class OrthotopeModel : public Model {
                  const double &frac );
 };
 
+/*
+ * A factory for creating models of type OrthotopeModel.
+ */
+class OrthotopeModelFactory : public ModelFactory {
+ public:
+        OrthotopeModelFactory() {}
+        virtual ~OrthotopeModelFactory() {}
+
+        inline Model* get_model(const int &principal_color, 
+                                const double &total_principal_colors,
+                                const double &total_other_colors) {
+            return new OrthotopeModel(principal_color, total_principal_colors,
+                                      total_other_colors);
+        }
+ private:
+        OrthotopeModelFactory(const OrthotopeModelFactory&) = delete;
+        OrthotopeModelFactory& operator=(const OrthotopeModelFactory&) = delete;
+};
+
+
 }   // end namespace sdm
 
 #endif   // SDM_ORTHOTOPE_MODEL_H

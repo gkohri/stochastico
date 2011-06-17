@@ -63,6 +63,14 @@ class Discriminator {
     }
 
     /*
+     * Set the factory used to generate models.
+     */
+    void set_model_factory( ModelFactory *model_factory){
+        modelFactory = model_factory;
+    }
+
+
+    /*
      * Set the boundaries for the learning stage
      */
     void set_boundary( const noir::Orthotope *boundary ){
@@ -121,6 +129,7 @@ class Discriminator {
     
  private:
     TrainingData trainingData;
+    ModelFactory *modelFactory;
     std::vector<Model*> models;
     const noir::Orthotope *boundary;
     rng::Random  *rand;

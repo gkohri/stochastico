@@ -18,13 +18,14 @@
 #include "sdm/ball_model.h"
 
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <set>
 #include <vector>
 
 #include "noir/ball.h"
 #include "noir/noir_space.h"
-#include "noir/orthotope.h"
+#include "noir/ball.h"
 #include "rng/random.h"
 
 namespace sdm {
@@ -44,10 +45,22 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
                     const double &lp, const double &up ){
 
     const NoirSpace *noirSpace = nexus->get_noir_space();
-    Orthotope *orthotope = new Orthotope( noirSpace );
 
-    double upper = 0.0;
-    double lower = 0.0;
+// Determine the radius of the Ball
+
+    double diameter = static_cast<double>(noirSpace->nominal +
+                                          noirSpace->ordinal +
+                                          noirSpace->interval +
+                                          noirSpace->real);
+
+    double nn_dist = noirSpace->norm(nexus->get_data_point(),
+                                     nn->get_data_point() );
+
+    double radius = diameter*(lp + (up-lp)*rand->next());
+
+    radius = radius < nn_dist ? nn_dist : radius;
+
+    Ball *ball = new Ball( noirSpace, radius );
 
 // Select the Real Dimensions
 
@@ -60,27 +73,13 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double coordinate = reals[r];
         if ( isnan( coordinate ) ) continue;
 
-        double nn_diff = 0.0;
-        if ( nn_reals != 0 && !isnan( nn_reals[r] ) )
-            nn_diff = nn_reals[r] - coordinate;
+        double between = coordinate;
+        if ( nn_reals != 0 && !isnan( nn_reals[r] ) ) {
+            double diff = nn_reals[r] - coordinate;
+            between += diff*rand->next();
+        }
 
-        region.get_real_boundaries( r, lower, upper );
-
-        double radius = (upper - lower)*0.5;
-
-        double zu = radius*(lp + (up-lp)*rand->next());
-        double rectUpper = coordinate + zu;
-        if ( nn_diff > 0.0 ) rectUpper += nn_diff;
-
-        if ( rectUpper > upper ) rectUpper = upper;
-
-        double zl = radius*(lp + (up-lp)*rand->next());
-        double rectLower = coordinate - zl;
-        if ( nn_diff < 0.0 ) rectLower += nn_diff;
-
-        if ( rectLower < lower ) rectLower = lower;
-
-        orthotope->set_real_boundaries( r, rectLower, rectUpper );
+        ball->set_real_coordinate( r, between );
     }
 
 // Select the Interval Dimensions
@@ -94,33 +93,13 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double coordinate = intervals[i];
         if ( isnan( coordinate ) ) continue;
 
-        double nn_diff = 0.0;
-        if ( nn_intervals != 0 && !isnan( nn_intervals[i] ) )
-            nn_diff = nn_intervals[i] - coordinate;
+        double between = coordinate;
+        if ( nn_intervals != 0 && !isnan( nn_intervals[i] ) ) {
+            double diff = nn_intervals[i] - coordinate;
+            between += diff*rand->next();
+        }
 
-        region.get_interval_boundaries( i, lower, upper );
-
-        double radius = 0.5;
-
-        double zu = radius*(lp + (up-lp)*rand->next());
-        double rectUpper = coordinate + zu;
-        if ( nn_diff > 0.0 ) rectUpper += nn_diff;
-
-        if ( rectUpper > 1.0 ) 
-            rectUpper = rectUpper - 1.0;
-        else if ( rectUpper > upper )
-            rectUpper = upper;
-
-        double zl = radius*(lp + (up-lp)*rand->next());
-        double rectLower = coordinate - zl;
-        if ( nn_diff < 0.0 ) rectLower += nn_diff;
-
-        if ( rectLower < 0.0 ) 
-            rectLower = 1.0+lower;
-        else if ( rectLower < lower )
-            rectLower = lower;
-
-        orthotope->set_interval_boundaries( i, rectLower, rectUpper );
+        ball->set_interval_coordinate( i, between );
     }
 
 
@@ -135,27 +114,13 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double coordinate = ordinals[o];
         if ( isnan( coordinate ) ) continue;
 
-        double nn_diff = 0.0;
-        if ( nn_ordinals != 0 && !isnan( nn_ordinals[o] ) )
-            nn_diff = nn_ordinals[o] - coordinate;
+        double between = coordinate;
+        if ( nn_ordinals != 0 && !isnan( nn_ordinals[o] ) ){
+            double diff = nn_ordinals[o] - coordinate;
+            between += diff*rand->next();
+        }
 
-        region.get_ordinal_boundaries( o, lower, upper );
-
-        double radius = (upper - lower)/2.0;
-
-        double rectUpper = coordinate;
-        if ( rand->next() < up ) rectUpper += radius;
-        if ( nn_diff > 0.0 ) rectUpper += nn_diff;
-
-        if ( rectUpper > upper ) rectUpper = upper;
-
-        double rectLower = coordinate;
-        if ( rand->next() < up ) rectLower -= radius;
-        if ( nn_diff < 0.0 ) rectLower += nn_diff;
-
-        if ( rectLower < lower ) rectLower = lower;
-
-        orthotope->set_ordinal_boundaries( o, rectLower, rectUpper );
+        ball->set_ordinal_coordinate( o, between );
     }
 
 
@@ -170,43 +135,33 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         if ( coordinate == -1 ) continue;
 
         const set<int> allowed = region.get_nominals(n);
-/*
-        // Odd, it seems to work better using a random selection of nominals
-
-        ns->add_nominal( n, coordinate );
-
-        if ( nn_nominals != 0 && ! nn_nominals[n] != -1 )
-            ns->add_nominal( n, nn_nominals[n] );
 
         int max_allowable = static_cast<int>(allowed.size()) - 2;
-*/
-        int max_allowable = static_cast<int>(allowed.size());
+
+        ball->add_nominal( n, coordinate );
+
+        if ( nn_nominals != 0 && nn_nominals[n] != -1 ){
+            ball->add_nominal( n, nn_nominals[n] );
+        }
 
         for ( int nn = 0; nn < max_allowable; ++nn) {
             if ( rand->next() > up ) continue;
-            orthotope->add_nominal( n, nn );
+            ball->add_nominal( n, nn );
         }
     }
 
 // Store the resulting space
 
-    spaces.push_back( orthotope );
+    spaces.push_back( ball );
 }
 
 void BallModel::thicken(const Orthotope &region, Random *rand, 
                               const double &frac){
 
-    Orthotope *orthotope = dynamic_cast<Orthotope*>(spaces.back());
+    Ball *ball = dynamic_cast<Ball*>(spaces.back());
+    double radius = ball->get_radius()/frac;
 
-    double upper = 0.0;
-    double lower = 0.0;
-    for ( int d = 0; d < region.noirSpace->real; d++ ){
-        if ( rand->next() > frac ) continue;
-
-        region.get_real_boundaries( d, lower, upper );
-
-        orthotope->set_real_boundaries( d, lower, upper );
-    }
+    ball->set_radius(radius);
 }
 
 

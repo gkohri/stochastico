@@ -74,8 +74,11 @@ class Model {
     }
 
     /*
-     * Expands this model by creating a hyper-rectangle using the specified
-     * nexus and nearest neighbor points.
+     * Expands this model by creating a new closed subspace of the the 
+     * specified region. The nexus and nearest neighbor point characterize the
+     * desired location of the new subspace.  The random number generator
+     * may be used to create random variations of the subspace. 
+     * lp and up are guidelines for the size of the subspace.
      */
     virtual void expand( const noir::Orthotope &region, CoveredPoint *nexus,
                          CoveredPoint *nn, rng::Random *rand, 
@@ -127,6 +130,29 @@ class Model {
     double numPrincipalColor;
     double numOtherColor;
     int    principalColor;
+
+    Model(const Model&) = delete;
+    Model& operator=(const Model&) = delete;
+};
+
+struct ModelTypes{
+    enum Types{ Ball, Orthotope};
+};
+
+/*
+ * A factory for creating models of a particular class.
+ */
+class ModelFactory {
+ public:
+    ModelFactory() {}
+    virtual ~ModelFactory() {}
+
+    virtual Model* get_model(const int &principal_color, 
+                             const double &total_principal_colors,
+                             const double &total_other_colors) = 0;
+ private:
+    ModelFactory(const ModelFactory&) = delete;
+    ModelFactory& operator=(const ModelFactory&) = delete;
 };
 
 }   // end namespace sdm

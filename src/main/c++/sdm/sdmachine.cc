@@ -26,6 +26,9 @@
 #include "noir/orthotope.h"
 #include "sdm/discriminator.h"
 #include "sdm/data_point.h"
+#include "sdm/model.h"
+#include "sdm/ball_model.h"
+#include "sdm/orthotope_model.h"
 #include "rng/mt19937.h"
 #include "rng/random.h"
 #include "rng/random_factory.h"
@@ -64,13 +67,25 @@ SDMachine::~SDMachine() {
     learning_results.clear();
 }
 
+
+void SDMachine::set_parameter(const string &name, string &parameter ) {
+    parameter = sdmParameters->get_property( name );
+
+    if ( parameter.empty() ) {
+        fprintf(stderr,"%s: '%s' %s \n", "Warning: ", name.c_str(),
+             " is missing in parameters file! Using default value: " );
+    }
+}
+
 template<typename ValueType>
 void SDMachine::set_value(const string &name, ValueType &value ) {
     string value_str = sdmParameters->get_property( name );
 
     if ( value_str.empty() ) {
         fprintf(stderr,"%s: '%s' %s \n", "Warning: ", name.c_str(),
-             " is missing in parameters file! Using default value: " );
+             " is missing in parameters file!" );
+        throw util::InvalidInputError( __FILE__, __LINE__,
+                        name + " is missing in parameters file!" );
     } else {
         to_numeric(value_str, value);
     }
@@ -86,8 +101,20 @@ void SDMachine::init( Properties &parameters ) {
     set_value( "SDM::Learning::NumberOfFolds", numFolds );
     set_value( "SDM::Model::FeatureSpace::UpperFraction", upperFrac );
     set_value( "SDM::Model::FeatureSpace::LowerFraction", lowerFrac );
-    set_value( "SDM::Learning::NumberOfAttempts", numAttempts );
+    set_value( "SDM::Learning::MaximumNumberOfSubspaces", numAttempts );
     set_value( "SDM::Learning::EnrichmentLevel", enrichmentLevel );
+
+    string subspaceTypes;
+    set_parameter( "SDM::Model::SubspaceTypes", subspaceTypes );
+
+    if ( subspaceTypes.compare( "Balls" ) == 0 ){
+        modelTypes = ModelTypes::Ball;
+    } else if ( subspaceTypes.compare( "Orthotopes" ) == 0 ){
+        modelTypes = ModelTypes::Orthotope;
+    } else {
+        throw util::InvalidInputError( __FILE__, __LINE__,
+                        "Unknown subspace type: " + subspaceTypes);
+    }
 
 }
 
@@ -233,6 +260,11 @@ void SDMachine::create_discriminators(DataManager &dataManager) {
         dis->set_lower_fraction( lowerFrac );
         dis->set_upper_fraction( upperFrac );
         dis->set_enrichment_level( enrichmentLevel );
+        if ( modelTypes == ModelTypes::Ball ) {
+            dis->set_model_factory( new BallModelFactory() );
+        } else if ( modelTypes == ModelTypes::Orthotope ) {
+            dis->set_model_factory( new OrthotopeModelFactory() );
+        }
 
         discriminators.push_back( dis );   
     }
@@ -246,8 +278,8 @@ void SDMachine::ready_discriminator(Discriminator *dis,
         if ( fold == skip_fold ) continue;
         dis->add_training_data( dataManager.get_partition( fold ) );
     }
-    dis->create_models_lc( numModels, numAttempts);
-    //dis->create_models_rc( numModels, numAttempts);
+    //dis->create_models_lc( numModels, numAttempts);
+    dis->create_models_rc( numModels, numAttempts);
 }
 
 void SDMachine::ready_discriminators(DataManager &dataManager,

@@ -64,6 +64,7 @@ class SDMachine {
     std::vector<stat::ROC*> learning_results;
     rng::Random *uniform;
     util::Properties *sdmParameters;
+    ModelTypes::Types modelTypes;
     int numModels;
     int numFolds;
     int numAttempts;
@@ -83,6 +84,7 @@ class SDMachine {
     void simple_learning( DataManager &dataManager );
     template<typename ValueType>
     inline void set_value(const std::string &name, ValueType &value);
+    inline void set_parameter(const std::string &name, std::string &parameter);
 
 };
 

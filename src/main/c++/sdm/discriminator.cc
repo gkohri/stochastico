@@ -26,6 +26,7 @@
 #include "util/csv.h"
 #include "util/invalid_input_error.h"
 #include "sdm/orthotope_model.h"
+#include "sdm/ball_model.h"
 
 namespace sdm{
 
@@ -74,13 +75,11 @@ void Discriminator::create_models_rc( const int &num_models,
 
     numUnfinished = 0;
 
+    double avg_cov = 0.0;
     bool not_finished = false;
     for ( int m = 0; m < num_models; m++ ){
         double lpf = lowerFrac;
         double upf = upperFrac;
-
-        double lower_cover = 0.1*static_cast<double>(trainingData.size());
-        double upper_cover = 0.3*static_cast<double>(trainingData.size());
 
         double norm = 1.0;
         if ( models.size() > 0 ) {
@@ -88,54 +87,64 @@ void Discriminator::create_models_rc( const int &num_models,
         }
 
         //Generate a random model
-        Model *model = new OrthotopeModel(principalColor, numPrincipalColor, 
-                                 numOtherColor);
+        Model *model = modelFactory->get_model(principalColor, 
+                                           numPrincipalColor, numOtherColor);
 
         //Add points to the model
         int t;
-        int rank = 0;
         for ( t = 0; t < num_attempts; t++ ){
-            //Expand the model by adding a new hyper-rectangle
-            CoveredPoint *nexus = trainingData.get_least_covered(rank);
+            CoveredPoint *nexus = trainingData.get_random_point();
             CoveredPoint *nn = trainingData.get_nn(nexus) ;
             model->expand( *boundary, nexus, nn, rand, lpf, upf );
 
-            if ( !(model->covers(nexus)) ) {
-                fprintf(stderr,"nexus not covered!\n");
-            }
             if ( nexus == 0) {
                 fprintf(stderr,"nexus does not exist!\n");
+            }
+            if ( !(model->covers(nexus)) ) {
+                fprintf(stderr,"nexus not covered!\n");
             }
             if ( nn == 0) {
                 fprintf(stderr,"neighbor does not exist!\n");
             }
             if ( !(model->covers(nn)) ) {
-                fprintf(stderr,"neighbor not covered!\n");
+                double dist = nexus->get_data_point()->noirSpace->norm(
+                                        nexus->get_data_point(),
+                                        nn->get_data_point() );
+                fprintf(stderr,"neighbor not covered! %f\n",dist);
             }
 
-            //Check the coverage of points in this model
+            //Check the average coverage of points in this model
+
             model->clear_checked_points();
+
+            double avg_mod_cov = 0.0;
+            double num_mod_cov = 0.0;
             for (pit = trainingData.begin(); pit < trainingData.end(); ++pit){
-                model->check_point( *pit );
+                if ( model->check_point( *pit ) ) {
+                        avg_mod_cov += (*pit)->get_coverage()*norm;
+                        num_mod_cov += 1.0;
+                }
             }
+            avg_mod_cov /=  num_mod_cov;
 
             double model_pc = 
                         static_cast<double>(model->get_num_principal_color());
             double model_oc = 
                         static_cast<double>(model->get_num_other_color());
 
-            double model_total = model_pc + model_oc;
+            //If we have to many points in the model, then break and start over
 
+/*
             fprintf(stderr,"c: %d t:  %d  ns:  %d total: %f  %f  %f %f %f \n",
                 principalColor, t, model->get_num_elements(),
                 model_total, numPrincipalColor,numOtherColor,
-                    lower_cover, upper_cover);
+                    avg_mod_cov, avg_cov);
+*/
 
-            if ( model_total < lower_cover ){
-                ++rank;
-                continue;
+
+            if ( model_pc == numPrincipalColor ) {
+                break;
             }
-            if ( model_total > upper_cover ) break;
 
 
             double ratio_diff = model_pc/numPrincipalColor - 
@@ -143,23 +152,36 @@ void Discriminator::create_models_rc( const int &num_models,
 
             //Check for richness
             if ( ratio_diff >= enrichmentLevel ){
-                not_finished = false;
-                for (pit = trainingData.begin(); pit < trainingData.end(); 
+                double delta = avg_mod_cov - avg_cov;
+                if (delta < 0.1 || models.size() == 0){
+                    not_finished = false;
+                    double avg_cov_m = 0.0;
+                    for (pit = trainingData.begin(); pit < trainingData.end(); 
                                                                     ++pit){
-                    if ( (*pit)->get_color() == principalColor ) {
-                        (*pit)->increment_coverage(1.0);
+                        if ( (*pit)->get_color() == principalColor ) {
+                            if ( model->covers(*pit) ) {
+                                (*pit)->increment_coverage(1.0);
+                                double cov =  (*pit)->get_coverage()*norm;
+                                avg_cov_m += cov;
+                            }
+                        }
                     }
+                    avg_cov_m /= model_pc;
+                    if ( models.size() == 0 ) {
+                        avg_cov = avg_cov_m;
+                    } else {
+                        avg_cov += (avg_cov_m - avg_cov)/
+                                        static_cast<double>(models.size()+1);
+                    }
+                    models.push_back( model );
+                    trainingData.reorder();
+                    break;
                 }
-                models.push_back( model );
-                trainingData.reorder();
-                break;
             }
-
-            ++rank;
         }
 
-        //if could not find an enriched model after max tries, delete the
-        //   model and try again with different points.
+        //if no enriched model could be created, delete the current model
+        //and try again with different points.
         if ( not_finished ){
             delete model;
             if ( t == num_attempts ){
@@ -208,8 +230,8 @@ void Discriminator::create_models_lc( const int &num_models,
         }
 
         //Generate a random model
-        Model *model = new OrthotopeModel(principalColor, numPrincipalColor, 
-                                 numOtherColor);
+        Model *model = modelFactory->get_model(principalColor, 
+                                               numPrincipalColor, numOtherColor);
 
         //Make max_attempts to find a new model
         int t;
@@ -217,6 +239,20 @@ void Discriminator::create_models_lc( const int &num_models,
 
             //Expand the model by adding a new hyper-rectangle
             model->expand( *boundary, least_covered, lc_nn, rand, lpf, upf );
+
+            if ( !(model->covers(least_covered)) ) {
+                fprintf(stderr,"nexus not covered!\n");
+            }
+            if ( least_covered == 0) {
+                fprintf(stderr,"nexus does not exist!\n");
+            }
+            if ( lc_nn == 0) {
+                fprintf(stderr,"neighbor does not exist!\n");
+            }
+            if ( !(model->covers(lc_nn)) ) {
+                fprintf(stderr,"neighbor not covered!\n");
+            }
+
 
             model->clear_checked_points();
 
@@ -275,7 +311,8 @@ void Discriminator::create_models_lc( const int &num_models,
                     if ( models.size() == 0 ) {
                         avg_cov = avg_cov_m;
                     } else {
-                        avg_cov += (avg_cov - avg_cov_m)*norm;
+                        avg_cov += (avg_cov_m - avg_cov)/
+                                        static_cast<double>(models.size()+1);
                     }
                     models.push_back( model );
                     trainingData.reorder();

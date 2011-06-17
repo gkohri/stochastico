@@ -29,7 +29,7 @@
 namespace sdm {
 
 /*
- * This Model implementation consists of a union of Orthotopes.
+ * This Model implementation consists of a union of Balls Noir Space.
  */
 class BallModel : public Model {
  public:
@@ -54,6 +54,25 @@ class BallModel : public Model {
      */
     void thicken( const noir::Orthotope &region, rng::Random *rand,
                  const double &frac );
+};
+
+/*
+ * A factory for creating models of type BallModel.
+ */
+class BallModelFactory : public ModelFactory {
+ public:
+        BallModelFactory() {}
+        virtual ~BallModelFactory() {}
+
+        inline Model* get_model(const int &principal_color, 
+                                const double &total_principal_colors,
+                                const double &total_other_colors) {
+            return new BallModel(principal_color, total_principal_colors,
+                                 total_other_colors);
+        }
+ private:
+        BallModelFactory(const BallModelFactory&) = delete;
+        BallModelFactory& operator=(const BallModelFactory&) = delete;
 };
 
 }   // end namespace sdm

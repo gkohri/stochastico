@@ -29,27 +29,24 @@ namespace noir {
  * An Ball in Noir Space is defined by a point, a radius and the metric used
  * to define the space.
  */
-class Ball : public ClosedSpace {
+class Ball : public Point, public ClosedSpace {
  public:
-    noir::NoirSpace const * const noirSpace;
-
-    Ball(const NoirSpace *noirSpace, const Point *center, 
-         const double &radius); 
+    Ball(const NoirSpace *noirSpace, const double &radius); 
 
     virtual ~Ball();
 
     /*
-     * Retrieve the center
+     * Retrieve the radius
      */
-    const Point* get_center() const {
-        return center;
+    double get_radius() const {
+        return radius;
     }
 
     /*
      * Retrieve the radius
      */
-    double get_radius(){
-        return radius;
+    void set_radius(const double &radius ){
+        this->radius = radius;
     }
 
     /*
@@ -73,7 +70,6 @@ class Ball : public ClosedSpace {
     }
 
  private:
-    const Point *center;
     double radius;
     std::set<int> *allowed_nominals;
 

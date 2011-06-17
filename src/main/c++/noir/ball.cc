@@ -25,16 +25,12 @@ namespace noir {
 
 using std::set;
 
-Ball::Ball( const NoirSpace *noir_space, const Point *center,
-                      const double &radius ) : noirSpace(noir_space), 
-                      center(center),
-                      radius(radius) {
-
+Ball::Ball( const NoirSpace *noir_space, const double &radius ) : 
+            Point(noir_space), radius(radius) {
     allowed_nominals = new set<int>[noirSpace->nominal];
     for ( int n = 0; n < noirSpace->nominal; ++n ) {
         allowed_nominals[n].clear();
     }
-
 }
 
 Ball::~Ball() {
@@ -42,18 +38,18 @@ Ball::~Ball() {
 }
 
 bool Ball::in_closure( const Point *point ) const {
-
-    double dist = noirSpace->norm( center, point );
+    double dist = noirSpace->norm( this, point );
 
     int const *p_nominals = point->get_nominal_coordinates();
     for ( int n = 0; n < noirSpace->nominal; ++n ) {
-        if ( allowed_nominals[n].find(p_nominals[n]) ==
+        if ( allowed_nominals[n].find(p_nominals[n]) !=
                                         allowed_nominals[n].end() ) {
-            dist += 1.0;
+            dist -= 1.0;
         }
     }
 
-    if ( dist > radius )
+    double epsilon = 1.0e-3;
+    if ( dist - radius > epsilon )
         return false;
     else
         return true;
