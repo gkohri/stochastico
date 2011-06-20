@@ -38,7 +38,6 @@ namespace sdm {
 
 using std::set;
 using std::string;
-using std::transform;
 using std::vector;
 using std::numeric_limits;
 
@@ -71,19 +70,6 @@ void DataManager::init( const Properties &parameters ) {
         delimiter = parameters.get_property( delimiter_param );
     }
 
-    string headers_field_param( "Data::Headers" );
-    if ( parameters.contains_property(headers_field_param) ) {
-        string headers_field_prop = parameters.get_property(
-                                                    headers_field_param);
-        transform(headers_field_prop.begin(), headers_field_prop.end(),
-                  headers_field_prop.begin(), ::tolower);
-        if (headers_field_prop.compare( "true" ) == 0) {
-            headers = true;
-        } else if (headers_field_prop.compare( "false" ) == 0) {
-            headers = false;
-        }
-    }
-
 
     parse_single_value(parameters, "Data::Fields::NumberOf", numFields );
     parse_field_index(parameters, "Data::Fields::ID", idField );
@@ -91,10 +77,12 @@ void DataManager::init( const Properties &parameters ) {
 
     vector<int>::iterator vit;
 
+    parse_values<set<int>,int>(parameters, "Data::Fields::Skip", skipFields );
+
     parse_values<vector<int>,int>(parameters, "Data::Fields::Real", 
                                   realFields );
 
-    //In the data file the indicies start with 1, but in C++ they start with 0
+    //In the input file the indicies start with 1, but in C++ they start with 0
     for ( vit = realFields.begin(); vit != realFields.end(); ++vit ) {
         --(*vit);
     }
@@ -104,7 +92,7 @@ void DataManager::init( const Properties &parameters ) {
 
     read_interval_periods(parameters);
 
-    //In the data file the indicies start with 1, but in C++ they start with 0
+    //In the input file the indicies start with 1, but in C++ they start with 0
     for ( vit = intervalFields.begin(); vit != intervalFields.end(); ++vit ) {
         --(*vit);
     }
@@ -115,7 +103,7 @@ void DataManager::init( const Properties &parameters ) {
 
     read_ordinal_values(parameters);
 
-    //In the data file the indicies start with 1, but in C++ they start with 0
+    //In the input file the indicies start with 1, but in C++ they start with 0
     for ( vit = ordinalFields.begin(); vit != ordinalFields.end(); ++vit ) {
         --(*vit);
     }
@@ -255,11 +243,6 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
     vector<string> fields;
 
-    if ( headers && csvReader.has_more_lines() ) {
-        csvReader.next_line( fields );
-        fields.clear();
-    }
-
     int nominal_dimensions = nominalFields.size();
     int ordinal_dimensions = ordinalFields.size();
     int interval_dimensions = intervalFields.size();
@@ -283,8 +266,11 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     int id = 0;
     double value = 0.0;
     int ivalue = 0;
+    int line = 1;
     while ( csvReader.has_more_lines() ) {
         csvReader.next_line( fields );
+
+        if ( skipFields.find(line) != skipFields.end() ) continue;
 
         if ( fields.size() != numFields ) {
             throw util::InvalidInputError(__FILE__,__LINE__,
@@ -372,6 +358,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
         dataStore.add( point );
 
         fields.clear();
+        ++line;
     }
 
     double lambda = 1.01;

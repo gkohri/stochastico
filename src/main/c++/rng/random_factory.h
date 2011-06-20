@@ -35,8 +35,9 @@ namespace rng {
 class RandomFactory {
  public:
     /*
-     * The set_seed() method must be called at most once before the first 
-     * call to get_instance(), all later invocations will have no effect.
+     * The set_seed() method must be called before the first 
+     * call to get_instance(), afterwards it  will have no effect. A second or
+     * subsequent call to set_seed has not effect.
      */
     static void set_seed( const unsigned seed);
 

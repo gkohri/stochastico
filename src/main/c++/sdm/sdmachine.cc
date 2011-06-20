@@ -116,6 +116,19 @@ void SDMachine::init( Properties &parameters ) {
                         "Unknown subspace type: " + subspaceTypes);
     }
 
+    string learning_algorithms;
+    set_parameter( "SDM::Learning::Algorithm", learning_algorithms );
+
+    if ( learning_algorithms.compare( "LeastCovered" ) == 0 ){
+        learningAlgorithm = LeastCovered;
+    } else if ( learning_algorithms.compare( "RandomPoints" ) == 0 ){
+        learningAlgorithm = RandomPoints;
+    } else {
+        throw util::InvalidInputError( __FILE__, __LINE__,
+                      "Unknown learning algorithm: " + learning_algorithms);
+    }
+
+
 }
 
 void SDMachine::learn( DataManager &dataManager ) {
@@ -278,8 +291,10 @@ void SDMachine::ready_discriminator(Discriminator *dis,
         if ( fold == skip_fold ) continue;
         dis->add_training_data( dataManager.get_partition( fold ) );
     }
-    //dis->create_models_lc( numModels, numAttempts);
-    dis->create_models_rc( numModels, numAttempts);
+    if ( learningAlgorithm == LeastCovered )
+        dis->create_models_lc( numModels, numAttempts);
+    else if ( learningAlgorithm == RandomPoints )
+        dis->create_models_rc( numModels, numAttempts);
 }
 
 void SDMachine::ready_discriminators(DataManager &dataManager,

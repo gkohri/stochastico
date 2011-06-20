@@ -59,6 +59,8 @@ class SDMachine {
     void ready_discriminator( Discriminator *dis, DataManager &dataManager, 
                               const int &skip_fold );
 
+    enum LearningAlgorithms {LeastCovered, RandomPoints};
+
  private:
     std::vector<Discriminator*> discriminators;
     std::vector<stat::ROC*> learning_results;
@@ -71,6 +73,7 @@ class SDMachine {
     double lowerFrac;
     double upperFrac;
     double enrichmentLevel;
+    LearningAlgorithms learningAlgorithm;
 
     rng::Random* initialize_uniform_rng( const util::Properties &props );
     void clear_learning_results();

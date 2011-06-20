@@ -65,11 +65,9 @@ void Discriminator::check_data_consistency(){
 }
 
 void Discriminator::create_models_rc( const int &num_models, 
-                                      const int &num_attempts ){
+                                      const int &num_spaces ){
     check_data_consistency();
     trainingData.find_nn() ;
-
-    trainingData.reorder();
 
     vector<CoveredPoint *>::iterator pit;
 
@@ -92,7 +90,7 @@ void Discriminator::create_models_rc( const int &num_models,
 
         //Add points to the model
         int t;
-        for ( t = 0; t < num_attempts; t++ ){
+        for ( t = 0; t < num_spaces; t++ ){
             CoveredPoint *nexus = trainingData.get_random_point();
             CoveredPoint *nn = trainingData.get_nn(nexus) ;
             model->expand( *boundary, nexus, nn, rand, lpf, upf );
@@ -174,7 +172,6 @@ void Discriminator::create_models_rc( const int &num_models,
                                         static_cast<double>(models.size()+1);
                     }
                     models.push_back( model );
-                    trainingData.reorder();
                     break;
                 }
             }
@@ -184,7 +181,7 @@ void Discriminator::create_models_rc( const int &num_models,
         //and try again with different points.
         if ( not_finished ){
             delete model;
-            if ( t == num_attempts ){
+            if ( t == num_spaces ){
                 ++numUnfinished;
             }
         }
@@ -195,7 +192,7 @@ void Discriminator::create_models_rc( const int &num_models,
 
 
 void Discriminator::create_models_lc( const int &num_models, 
-                                      const int &num_attempts ){
+                                      const int &num_spaces ){
 
     check_data_consistency();
     trainingData.find_nn() ;
@@ -235,7 +232,7 @@ void Discriminator::create_models_lc( const int &num_models,
 
         //Make max_attempts to find a new model
         int t;
-        for ( t = 0; t < num_attempts; t++ ){
+        for ( t = 0; t < num_spaces; t++ ){
 
             //Expand the model by adding a new hyper-rectangle
             model->expand( *boundary, least_covered, lc_nn, rand, lpf, upf );
@@ -333,7 +330,7 @@ void Discriminator::create_models_lc( const int &num_models,
         //   model and try again with a different point.
         if ( not_finished ){
             delete model;
-            if ( t == num_attempts ){
+            if ( t == num_spaces ){
                 ++numUnfinished;
             }
             ++rank;

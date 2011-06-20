@@ -36,15 +36,18 @@ namespace sdm{
 class Discriminator {
  public:
     Discriminator( const int &principal_color = 0 ): 
-        trainingData( principal_color ), models(),
-        boundary(0), rand(0),
-        numPrincipalColor(0.0), 
-        numOtherColor(0.0),threshold(1.0),
-        lowerFrac(0.0), upperFrac(0.1), enrichmentLevel(0.1),
-        principalColor( principal_color ), numUnfinished(0) {}
+                   trainingData( principal_color ), 
+                   modelFactory(0),
+                   models(),
+                   boundary(0), rand(0),
+                   numPrincipalColor(0.0), 
+                   numOtherColor(0.0),threshold(1.0),
+                   lowerFrac(0.0), upperFrac(0.1), enrichmentLevel(0.1),
+                   principalColor( principal_color ), numUnfinished(0) {}
 
     virtual ~Discriminator(){
         clear();
+        delete modelFactory;
     }
 
     /*
@@ -107,9 +110,9 @@ class Discriminator {
      * This method creates models using the least covered point as the model's
      * nexus
      */
-    void create_models_lc( const int &num_models, const int &num_attempts );
+    void create_models_lc( const int &num_models, const int &num_spaces );
 
-    void create_models_rc( const int &num_models, const int &num_attempts );
+    void create_models_rc( const int &num_models, const int &num_spaces );
 
     /*
      * Determine the probability that the specified point is a member of

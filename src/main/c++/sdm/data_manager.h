@@ -40,10 +40,10 @@ class DataManager {
  public:
     DataManager():trainingData(), testData(), enclosure(0), folds(),
                   delimiter(util::Delimiters::COMMA), colors(), noirSpace(0),
-                  nominalFields(), ordinalFields(), intervalFields(),
+                  skipFields(), nominalFields(), ordinalFields(), 
+                  intervalFields(),
                   realFields(), nominalValues(), ordinalValues(),
-                  numFields(2), idField(-1), colorField(1), 
-                  headers(true) {}
+                  numFields(2), idField(-1), colorField(1) {}
 
     virtual ~DataManager();
 
@@ -122,6 +122,7 @@ class DataManager {
     std::string delimiter;
     NominalScale colors;
     noir::NoirSpace *noirSpace;
+    std::set<int> skipFields;
     std::vector<int> nominalFields;
     std::vector<int> ordinalFields;
     std::vector<int> intervalFields;
@@ -132,7 +133,6 @@ class DataManager {
     size_t numFields;
     int idField;
     int colorField;
-    bool headers;
 
     void load_data( const std::string &filename, DataStore &dataStore );
 
