@@ -56,11 +56,10 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
     for ( int r = 0; r < noirSpace->real; r++ ){
 
         double coordinate = reals[r];
-        if ( isnan( coordinate ) ) continue;
+        double nn_coordinate = nn_reals[r];
+        if ( isnan( coordinate ) || isnan( nn_coordinate ) ) continue;
 
-        double nn_diff = 0.0;
-        if ( nn_reals != 0 && !isnan( nn_reals[r] ) )
-            nn_diff = nn_reals[r] - coordinate;
+        double nn_diff = nn_coordinate - coordinate;
 
         region.get_real_boundaries( r, lower, upper );
 
@@ -131,11 +130,10 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
     for ( int o = 0; o < noirSpace->ordinal; o++ ){
 
         double coordinate = ordinals[o];
-        if ( isnan( coordinate ) ) continue;
+        double nn_coordinate = nn_ordinals[o];
+        if ( coordinate == -1  || nn_coordinate == -1) continue;
 
-        double nn_diff = 0.0;
-        if ( nn_ordinals != 0 && !isnan( nn_ordinals[o] ) )
-            nn_diff = nn_ordinals[o] - coordinate;
+        double nn_diff = nn_coordinate - coordinate;
 
         region.get_ordinal_boundaries( o, lower, upper );
 
@@ -164,20 +162,16 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
     if ( nn != 0 ) nn_nominals = nn->get_nominal_coordinates();
 
     for ( int n = 0; n < noirSpace->nominal; ++n ){
+
         int coordinate = nominals[n];
-        if ( coordinate == -1 ) continue;
+        int nn_coordinate = nn_nominals[n];
+        if ( coordinate == -1 || nn_coordinate == -1 ) continue;
 
         const set<int> allowed = region.get_nominals(n);
-/*
-        // Odd, it seems to work better using a random selection of nominals
 
-        ns->add_nominal( n, coordinate );
+        orthotope->add_nominal( n, coordinate );
+        orthotope->add_nominal( n, nn_nominals[n] );
 
-        if ( nn_nominals != 0 && ! nn_nominals[n] != -1 )
-            ns->add_nominal( n, nn_nominals[n] );
-
-        int max_allowable = static_cast<int>(allowed.size()) - 2;
-*/
         int max_allowable = static_cast<int>(allowed.size());
 
         for ( int nn = 0; nn < max_allowable; ++nn) {

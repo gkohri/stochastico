@@ -18,6 +18,7 @@
 #include "noir/ball.h"
 
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <set>
 
@@ -38,6 +39,7 @@ Ball::~Ball() {
 }
 
 bool Ball::in_closure( const Point *point ) const {
+
     double dist = noirSpace->norm( this, point );
 
     int const *p_nominals = point->get_nominal_coordinates();

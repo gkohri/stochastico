@@ -92,7 +92,7 @@ void Discriminator::create_models_rc( const int &num_models,
         int t;
         for ( t = 0; t < num_spaces; t++ ){
             CoveredPoint *nexus = trainingData.get_random_point();
-            CoveredPoint *nn = trainingData.get_nn(nexus) ;
+            CoveredPoint *nn = trainingData.get_nn(nexus);
             model->expand( *boundary, nexus, nn, rand, lpf, upf );
 
             if ( nexus == 0) {
@@ -108,7 +108,8 @@ void Discriminator::create_models_rc( const int &num_models,
                 double dist = nexus->get_data_point()->noirSpace->norm(
                                         nexus->get_data_point(),
                                         nn->get_data_point() );
-                fprintf(stderr,"neighbor not covered! %f\n",dist);
+                fprintf(stderr,"c: %d  neighbor not covered! %10.3e\n",
+                                    principalColor,dist);
             }
 
             //Check the average coverage of points in this model
@@ -247,7 +248,11 @@ void Discriminator::create_models_lc( const int &num_models,
                 fprintf(stderr,"neighbor does not exist!\n");
             }
             if ( !(model->covers(lc_nn)) ) {
-                fprintf(stderr,"neighbor not covered!\n");
+                double dist = least_covered->get_data_point()->noirSpace->norm(
+                                        least_covered->get_data_point(),
+                                        lc_nn->get_data_point() );
+                fprintf(stderr,"c: %d  neighbor not covered! %10.3e\n",
+                                    principalColor,dist);
             }
 
 

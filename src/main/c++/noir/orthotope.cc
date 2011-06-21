@@ -124,7 +124,7 @@ bool Orthotope::in_closure( const Point *point ) const {
 
     const double* ordinals = point->get_ordinal_coordinates();
     for ( int o = 0; o < noirSpace->ordinal; ++o ) {
-        if ( isnan(ordinals[o]) ) continue;
+        if ( ordinals[o] == -1) continue;
         if ( ordinals[o] < ordinal_boundaries[o][0] ||
              ordinals[o] > ordinal_boundaries[o][1]   ) {
             in_closure = false;

@@ -30,5 +30,6 @@ Labor         0.97        0.03
 WBC           0.97        0.03 
 Ionosphere    0.92        0.10  
 Sonar         0.88        0.15
-satimage      0.83        0.20
+Satimage      0.85        0.15
+Hepatitis     0.83        0.17
 Glass         0.70        0.37
