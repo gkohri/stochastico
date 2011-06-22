@@ -19,7 +19,6 @@
 
 APPNAME='stochastico'
 VERSION='0.1.0'
-REVISION=''
 
 top='.'
 out='build'
@@ -38,7 +37,6 @@ def configure(cnf):
         cnf.check_cxx(lib=['pthread'], uselib_store='M')
         cnf.define('APPNAME',APPNAME)
         cnf.define('VERSION',VERSION)
-        cnf.define('REVISION',REVISION)
         cnf.write_config_header('config.h')
         print('→ configuring the project in ' + cnf.path.abspath())
 
