@@ -50,3 +50,7 @@ def build(bld):
         bld(features='cxx cxxprogram',source=tsrcs,
             includes = ['.', 'src/main/c++'],
             target='unit-tests', use=['M'])
+
+def dist(ctx):
+        ctx.algo      = 'tar.bz2'
+        ctx.excl      = '**/.waf-* **/*~ **/*.git **/*.swp **/.lock-* DataSets build junk'
