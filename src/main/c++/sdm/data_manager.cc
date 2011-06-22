@@ -77,7 +77,7 @@ void DataManager::init( const Properties &parameters ) {
 
     vector<int>::iterator vit;
 
-    parse_values<set<int>,int>(parameters, "Data::Fields::Skip", skipFields );
+    parse_values<set<int>,int>(parameters, "Data::Lines::Skip", skipLines );
 
     parse_values<vector<int>,int>(parameters, "Data::Fields::Real", 
                                   realFields );
@@ -235,6 +235,11 @@ void DataManager::load_test_data( const string &filename ) {
     if ( !filename.empty() ) load_data( filename, testData );
 }
 
+void DataManager::load_trial_data( const string &filename ) {
+    if ( !filename.empty() ) load_data( filename, trialData );
+}
+
+
 void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
     CSVReader csvReader( filename );
@@ -270,7 +275,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     while ( csvReader.has_more_lines() ) {
         csvReader.next_line( fields );
 
-        if ( skipFields.find(line) != skipFields.end() ) continue;
+        if ( skipLines.find(line) != skipLines.end() ) continue;
 
         if ( fields.size() != numFields ) {
             throw util::InvalidInputError(__FILE__,__LINE__,

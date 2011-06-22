@@ -140,6 +140,7 @@ void SDMachine::learn( DataManager &dataManager ) {
     }
 }
 
+
 /*
  This struct and the following function are just hacks to speed-up the learning
  processes.  This needs to be redone to create a proper multi-threaded
@@ -402,6 +403,59 @@ ROC* SDMachine::test( DataStore &test_data ) {
     delete[] td;
 
     return roc;
+};
+
+void SDMachine::process_trial_data( DataManager &dataManager ) {
+    if ( dataManager.has_trial_data() ) {
+        process( *dataManager.get_trial_data() );
+    }
+}
+
+void SDMachine::process( DataStore &trial_data ) {
+    vector<Discriminator*>::const_iterator dit;
+    DataStore::const_iterator pit;
+
+    double threshold = -std::numeric_limits<double>::max();
+    if (discriminators.size() == 1) threshold = 0.5;
+
+    unsigned num_dis = discriminators.size();
+    unsigned num_trials = trial_data.size();
+    prediction = new double*[num_dis];
+    for (unsigned td = 0; td < num_dis; ++td) {
+        prediction[td] = new double[num_trials];
+    }
+
+    pthread_t *tid = new pthread_t[discriminators.size()];
+    thread_data *td = new thread_data[discriminators.size()];
+    for (unsigned d = 0; d < num_dis; ++d) {
+            td[d].sdm = this;
+            td[d].dis = discriminators[d];
+            td[d].dis_id = d;
+            td[d].dataStore = &trial_data;
+            pthread_create( &tid[d], NULL, 
+                            test_discriminators, &td[d] );
+    }
+    for ( size_t d = 0; d < discriminators.size(); d++ ) {
+        pthread_join( tid[d], NULL );
+    }
+
+    for (unsigned td = 0; td < num_trials; ++td) {
+
+        fprintf(stdout,"%d", trial_data[td]->get_id());
+
+        for (unsigned d = 0; d < num_dis; ++d) {
+            fprintf(stdout,",%.6f", prediction[d][td]);
+        }
+        fprintf(stdout,"\n");
+    }
+
+    for (unsigned d = 0; d < num_dis; ++d) {
+        delete[] prediction[d];
+    }
+    delete[] prediction;
+    delete[] tid;
+    delete[] td;
+
 };
 
 

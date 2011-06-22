@@ -59,6 +59,14 @@ class SDMachine {
     void ready_discriminator( Discriminator *dis, DataManager &dataManager, 
                               const int &skip_fold );
 
+    /*
+     * Process the trial data held by the data manager, if any.
+     */
+    void process_trial_data( DataManager &dataManager );
+
+    /*
+     * Enumerate the supported learning algorithms.
+     */
     enum LearningAlgorithms {LeastCovered, RandomPoints};
 
  private:
@@ -82,6 +90,8 @@ class SDMachine {
     void train_discriminators();
 
     stat::ROC* test( DataStore &testData );
+
+    void process( DataStore &trialData );
 
     void folded_learning( DataManager &dataManager );
     void simple_learning( DataManager &dataManager );

@@ -60,7 +60,7 @@ int main( int argc, char * argv[] ) {
     get_command_line_options( argc, argv, prog_options );
 
     if ( !version.get_value().empty() ) {
-        fprintf(stdout,"%s version %s\n", APPNAME, VERSION);
+        fprintf(stderr,"%s version %s\n", APPNAME, VERSION);
         return 0;
     }
 
@@ -114,7 +114,14 @@ int main( int argc, char * argv[] ) {
 
     timer.elapsed( realTime, cpuTime );
 
-    fprintf(stdout,"%s %.4f s\n", "real time: ", realTime);
-    fprintf(stdout,"%s %.4f s\n", "cpu time: ", cpuTime);
-    fprintf(stdout,"%s %.4f\n", "speed up: ", cpuTime/realTime);
+    fprintf(stderr,"%s %.4f s\n", "real time: ", realTime);
+    fprintf(stderr,"%s %.4f s\n", "cpu time: ", cpuTime);
+    fprintf(stderr,"%s %.4f\n", "speed up: ", cpuTime/realTime);
+
+    fprintf(stderr,"\n----%s----\n\n","loading the trial data" );
+
+    dataManager.load_trial_data(
+            parameters.get_property( string("Data::Trial::Filename") ) );
+
+    sdm.process_trial_data( dataManager );
 }

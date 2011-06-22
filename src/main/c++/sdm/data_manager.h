@@ -38,9 +38,10 @@ namespace sdm {
  */
 class DataManager {
  public:
-    DataManager():trainingData(), testData(), enclosure(0), folds(),
+    DataManager():trainingData(), testData(), trialData(), enclosure(0), 
+                  folds(),
                   delimiter(util::Delimiters::COMMA), colors(), noirSpace(0),
-                  skipFields(), nominalFields(), ordinalFields(), 
+                  skipLines(), nominalFields(), ordinalFields(), 
                   intervalFields(),
                   realFields(), nominalValues(), ordinalValues(),
                   numFields(2), idField(-1), colorField(1) {}
@@ -61,6 +62,12 @@ class DataManager {
      * Loads the test data from a file
      */
     void load_test_data( const std::string &filename );
+
+    /*
+     * Loads the trial data from a file
+     */
+    void load_trial_data( const std::string &filename );
+
 
     /*
      * Partitions the training data into the specified number of folds
@@ -94,6 +101,13 @@ class DataManager {
     }
 
     /*
+     * Retrieve the trial data
+     */
+    DataStore* get_trial_data() {
+        return &trialData;
+    }
+
+    /*
      * Returns the number of colors (classes) found in the training data.
      */
     int get_num_colors() const {
@@ -114,15 +128,23 @@ class DataManager {
         return !testData.is_empty();
     }
 
+    /*
+     * Checks whether or not trial data has been loaded by this DataManager
+     */
+    bool has_trial_data(){
+        return !trialData.is_empty();
+    }
+
  private:
     DataStore trainingData;
     DataStore testData;
+    DataStore trialData;
     noir::Orthotope *enclosure;
     std::vector<DataStore*> folds;
     std::string delimiter;
     NominalScale colors;
     noir::NoirSpace *noirSpace;
-    std::set<int> skipFields;
+    std::set<int> skipLines;
     std::vector<int> nominalFields;
     std::vector<int> ordinalFields;
     std::vector<int> intervalFields;
