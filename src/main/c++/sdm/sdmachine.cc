@@ -34,6 +34,7 @@
 #include "rng/random_factory.h"
 #include "rng/ranmar.h"
 #include "stat/roc.h"
+#include "stat/accumulator.h"
 #include "util/functions.h"
 #include "util/properties.h"
 #include "util/invalid_input_error.h"
@@ -47,6 +48,7 @@ using std::vector;
 using noir::Orthotope;
 using rng::Random;
 using rng::RandomFactory;
+using stat::Accumulator;
 using stat::ROC;
 using util::to_numeric;
 using util::Properties;
@@ -203,10 +205,13 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
 
     dataManager.partition_training_data( numFolds, uniform );
 
-    clear_learning_results();
+    //clear_learning_results();
 
     //create discriminators
     create_discriminators( dataManager );
+
+    Accumulator error_accumulator;
+    Accumulator accuracy_accumulator;
 
     pthread_t *tid = new pthread_t[discriminators.size()];
     thread_data *td = new thread_data[discriminators.size()];
@@ -224,7 +229,8 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
         }
 
         ROC *result = test( *(dataManager.get_partition(f)) );
-        learning_results.push_back( result );
+        error_accumulator.gather( result->error_rate() );
+        accuracy_accumulator.gather( result->accuracy() );
 
         fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
                        "accuracy: ",    result->accuracy(),
@@ -233,26 +239,11 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
                        "specificity: ", result->specificity() );
     }
 
-    double avg_error_rate = 0.0;
-    double avg_accuracy = 0.0;
-    double avg_sensitivity = 0.0;
-    double avg_specificity = 0.0;
-    for ( int f = 0; f < numFolds; f++ ) {
-        avg_error_rate += learning_results[f]->error_rate();
-        avg_accuracy += learning_results[f]->accuracy();
-        avg_sensitivity += learning_results[f]->sensitivity();
-        avg_specificity += learning_results[f]->specificity();
-    }
-    avg_error_rate /= static_cast<double>(numFolds);
-    avg_accuracy   /= static_cast<double>(numFolds);
-    avg_sensitivity   /= static_cast<double>(numFolds);
-    avg_specificity   /= static_cast<double>(numFolds);
-
-    fprintf(stdout,"\n%s\t\t%.4f\n%s\t%.4f\n%s\t%.4f\n%s\t%.4f\n\n",
-                   "avg. accuracy: ",    avg_accuracy,
-                   "avg. error rate: ",  avg_error_rate,
-                   "avg. sensitivity: ", avg_sensitivity,
-                   "avg. specificity: ", avg_specificity );
+    fprintf(stdout,"\n%s\t\t%.4f\n%s\t%.4f\n%s\t\t%.4f\n%s\t%.4f\n\n",
+                   "avg. accuracy: ",    accuracy_accumulator.mean(),
+                   "avg. error rate: ",  error_accumulator.mean(),
+                   "deviation: ", accuracy_accumulator.deviation_population(),
+                   "standard error: ", error_accumulator.standard_error() );
 
     delete[] tid;
     delete[] td;

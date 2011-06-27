@@ -27,6 +27,7 @@
 #include "util/invalid_input_error.h"
 #include "sdm/orthotope_model.h"
 #include "sdm/ball_model.h"
+#include "stat/accumulator.h"
 
 namespace sdm{
 
@@ -34,6 +35,7 @@ using std::string;
 using std::vector;
 using std::numeric_limits;
 
+using stat::Accumulator;
 using util::CSVReader;
 using util::to_string;
 
@@ -347,52 +349,31 @@ void Discriminator::create_models_lc( const int &num_models,
 
 void Discriminator::training_data_prob_distribution(){
 
-    double avg_pc = 0.0;
-    double avg_oc = 0.0;
-    double avg2_pc = 0.0;
-    double avg2_oc = 0.0;
-    double npc = 0.0;
-    double opc = 0.0;
+    Accumulator apc;
+    Accumulator aoc;
 
     vector<CoveredPoint *>::iterator pit;
     for ( pit = trainingData.begin(); 
           pit < trainingData.end(); ++pit ){
         if ( (*pit)->get_color() == principalColor ) {
-            npc = test( (*pit)->get_data_point() );
-            avg_pc += npc;
-            avg2_pc += (npc*npc);
+            double npc = test( (*pit)->get_data_point() );
+            apc.gather(npc);
         } else {
-            opc = test( (*pit)->get_data_point() );
-            avg_oc += opc;
-            avg2_oc += (opc*opc);
+            double opc = test( (*pit)->get_data_point() );
+            aoc.gather(opc);
         }
     }
 
-    avg_pc /= numPrincipalColor;
-    avg2_pc /= numPrincipalColor;
-    avg_oc /= numOtherColor;
-    avg2_oc /= numOtherColor;
-
-    double sf_pc = numPrincipalColor/(numPrincipalColor - 1.0);
-    double sf_oc = numOtherColor/(numOtherColor - 1.0);
-    double sig_pc = sqrt(sf_pc*(avg2_pc - avg_pc*avg_pc));
-    double sig_oc = sqrt(sf_oc*(avg2_oc - avg_oc*avg_oc));
-
-    if ( avg_oc == 0.0 )
-        threshold = 1.0;
-    else
-        threshold = (avg_oc+2.0*sig_oc + avg_pc - 2.0*sig_pc)/2.0;
-
     fprintf(stdout, 
-   "%s %d\n%s %d\n%s %d\n%s %d\n%s %10.3e %s %10.3e %s %10.3e %s %10.3e\n\n", 
+   "%s %d\n%s %d\n%s %d\n%s %d\n%s %10.3e  %s %10.3e\n%s %10.3e  %s %10.3e\n\n", 
                    "number of models:", static_cast<int>(models.size()),
                    "number exceeded:", numUnfinished,
                    "number PC:", static_cast<int>(numPrincipalColor),
                    "number YC:", static_cast<int>(numOtherColor),
-                   "avg Y_PC: ", avg_pc,
-                   "sigma: ", sig_pc,
-                   "avg Y_OC: ", avg_oc,
-                   "sigma: ", sig_oc );
+                   "avg Y_PC: ", apc.mean(),
+                   "deviation: ", apc.deviation_population(),
+                   "avg Y_OC: ", aoc.mean(),
+                   "deviation: ", aoc.deviation_population() );
 
 };
 

@@ -166,6 +166,9 @@ class ROC {
     int64_t tn;
     int64_t fp;
     int64_t fn;
+
+    ROC(const ROC&) = delete;
+    ROC& operator=(const ROC&) = delete;
 };
 
 }   // end namespace stat
