@@ -22,24 +22,59 @@
 
 namespace stat {
 
-/*
- * Receiver Operating Characteristic
+/**
+ * Receiver Operating Characteristic.
  */
 class ROC {
  public:
-    ROC():tp(0), tn(0), fp(0), fn(0) {}
+    ROC():tp(0), tn(0), fp(0), fn(0), positive(), negative() {}
 
     virtual ~ROC() {}
 
-    void record_true_positive()  { ++tp; }
-    void record_true_negative()  { ++tn; }
-    void record_false_positive() { ++fp; }
-    void record_false_negative() { ++fn; }
+    void record_true_positive( const double &score ) {
+        positive.push_back(score);
+        ++tp;
+    }
+
+    void record_true_positive() {
+        positive.push_back(1.0);
+        ++tp;
+    }
+
+    void record_false_positive( const double &score ) {
+        negative.push_back(score);
+        ++fp;
+    }
+
+    void record_false_positive() {
+        negative.push_back(1.0);
+        ++fp;
+    }
+
+    void record_true_negative( const double &score ) {
+        negative.push_back(score);
+        ++tn;
+    }
+
+    void record_true_negative() {
+        negative.push_back(1.0);
+        ++tn;
+    }
+
+    void record_false_negative( const double &score ) {
+        positive.push_back(score);
+        ++fn;
+    }
+
+    void record_false_negative() {
+        positive.push_back(1.0);
+        ++fn;
+    }
 
     double true_positive()  { return  static_cast<double>(tp); }
-    double true_negative()  { return  static_cast<double>(tp); }
-    double false_positive() { return  static_cast<double>(tp); }
-    double false_negative() { return  static_cast<double>(tp); }
+    double true_negative()  { return  static_cast<double>(tn); }
+    double false_positive() { return  static_cast<double>(fp); }
+    double false_negative() { return  static_cast<double>(fn); }
 
     double sensitivity(){
         int64_t denom = tp + fn;
@@ -122,19 +157,6 @@ class ROC {
             return 0.0;
     }
 
-    double auc() {
-        if ( (tp + fn) > 0 && (tn + fp) > 0 ) {
-            double dtp =  static_cast<double>(tp);
-            double dtn =  static_cast<double>(tn);
-            double dfn =  static_cast<double>(fn);
-            double dfp =  static_cast<double>(fp);
-            return ( (dtp*dtn - dtp*dfp/2.0 + dfn*dtn/2.0)/
-                                         ((dtp + dfn)*(dtn + dfp)) );
-        } else {
-            return 0.0;
-        }
-    }
-
     /*
      * Matthews correlation coefficient
      */
@@ -159,6 +181,8 @@ class ROC {
         tn = 0;
         fp = 0;
         fn = 0;
+        positive.clear();
+        negative.clear();
     }
 
  private:
@@ -166,6 +190,9 @@ class ROC {
     int64_t tn;
     int64_t fp;
     int64_t fn;
+
+    std::vector<double> positive;
+    std::vector<double> negative;
 
     ROC(const ROC&) = delete;
     ROC& operator=(const ROC&) = delete;

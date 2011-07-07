@@ -43,7 +43,8 @@ class Discriminator {
                    numPrincipalColor(0.0), 
                    numOtherColor(0.0),threshold(1.0),
                    lowerFrac(0.0), upperFrac(0.1), enrichmentLevel(0.1),
-                   principalColor( principal_color ), numUnfinished(0) {}
+                   principalColor( principal_color ), numUnfinished(0),
+                   numBroken(0) {}
 
     virtual ~Discriminator(){
         clear();
@@ -144,6 +145,7 @@ class Discriminator {
     double  enrichmentLevel;
     int     principalColor;
     int     numUnfinished;
+    int     numBroken;
 
     void training_data_prob_distribution();
 

@@ -74,9 +74,9 @@ void Discriminator::create_models_rc( const int &num_models,
     vector<CoveredPoint *>::iterator pit;
 
     numUnfinished = 0;
+    numBroken = 0;
 
     double avg_cov = 0.0;
-    bool not_finished = false;
     for ( int m = 0; m < num_models; m++ ){
         double lpf = lowerFrac;
         double upf = upperFrac;
@@ -90,6 +90,7 @@ void Discriminator::create_models_rc( const int &num_models,
         Model *model = modelFactory->get_model(principalColor, 
                                            numPrincipalColor, numOtherColor);
 
+        bool not_finished = true;
         //Add points to the model
         int t;
         for ( t = 0; t < num_spaces; t++ ){
@@ -144,6 +145,7 @@ void Discriminator::create_models_rc( const int &num_models,
 
 
             if ( model_pc == numPrincipalColor ) {
+                ++numBroken;
                 break;
             }
 
@@ -205,10 +207,10 @@ void Discriminator::create_models_lc( const int &num_models,
     vector<CoveredPoint *>::iterator pit;
 
     numUnfinished = 0;
+    numBroken = 0;
 
     double avg_cov = 0.0;
     int rank = 0;
-    bool not_finished = false;
     for ( int m = 0; m < num_models; m++ ){
 
         double lpf = lowerFrac;
@@ -235,6 +237,7 @@ void Discriminator::create_models_lc( const int &num_models,
 
         //Make max_attempts to find a new model
         int t;
+        bool not_finished = true;
         for ( t = 0; t < num_spaces; t++ ){
 
             //Expand the model by adding a new hyper-rectangle
@@ -286,6 +289,7 @@ void Discriminator::create_models_lc( const int &num_models,
 
             //If we have to many points in the model, then break and start over
             if ( model_pc == numPrincipalColor ) {
+                ++numBroken;
                 break;
             }
 
@@ -365,9 +369,10 @@ void Discriminator::training_data_prob_distribution(){
     }
 
     fprintf(stdout, 
-   "%s %d\n%s %d\n%s %d\n%s %d\n%s %10.3e  %s %10.3e\n%s %10.3e  %s %10.3e\n\n", 
+   "%s %d\n%s %d\n%s  %d\n%s %d\n%s %d\n%s %10.3e  %s %10.3e\n%s %10.3e  %s %10.3e\n\n", 
                    "number of models:", static_cast<int>(models.size()),
                    "number exceeded:", numUnfinished,
+                   "number broken:", numBroken,
                    "number PC:", static_cast<int>(numPrincipalColor),
                    "number YC:", static_cast<int>(numOtherColor),
                    "avg Y_PC: ", apc.mean(),

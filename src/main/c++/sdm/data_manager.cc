@@ -275,13 +275,18 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     while ( csvReader.has_more_lines() ) {
         csvReader.next_line( fields );
 
-        if ( skipLines.find(line) != skipLines.end() ) continue;
+        if ( skipLines.find(line) != skipLines.end() ) {
+            ++line;
+            fields.clear();
+            continue;
+        }
 
         if ( fields.size() != numFields ) {
             throw util::InvalidInputError(__FILE__,__LINE__,
                     "Expected " + to_string(numFields) +
                      " fields, but found " + to_string(fields.size()) +
-                                    " fields. Wrong file?" );
+                     " fields at line: " + to_string(line) +
+                                    ". Wrong file?" );
         }
 
         int color = colors.transcribe( fields[colorField] );
@@ -362,8 +367,8 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
         dataStore.add( point );
 
-        fields.clear();
         ++line;
+        fields.clear();
     }
 
     double lambda = 1.01;
@@ -449,20 +454,19 @@ void DataManager::partition_training_data( const int &num_folds,
         folds.push_back( new DataStore() );
     }
 
-    DataStore::const_iterator cpit;
+    int num_colors =  colors.size();
 
-    if ( rand == NULL ) {
-        int num_data = 0;
-        for ( cpit = trainingData.begin();
-              cpit != trainingData.end(); ++cpit ) {
-            int fold = num_data % num_folds;
-            folds[fold]->add( *cpit );
-            num_data++;
-        }
-    } else {
-        for (cpit = trainingData.begin(); cpit != trainingData.end(); ++cpit) {
-            int fold = rand->next_int( num_folds );
-            folds[fold]->add( *cpit );
+    vector<vector<int>> color(num_colors);
+
+    for ( size_t td = 0; td < trainingData.size(); ++td ) {
+        color[trainingData[td]->get_color()].push_back(td);
+    }
+
+    for ( int c = 0; c < num_colors ; ++c ) {
+        int num_data = color[c].size();
+        for ( int cd = 0; cd < num_data ; ++cd ) {
+            int fold = cd % num_folds;
+            folds[fold]->add( trainingData[color[c].at(cd)] );
         }
     }
 }

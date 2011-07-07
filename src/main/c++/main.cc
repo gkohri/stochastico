@@ -88,13 +88,15 @@ int main( int argc, char * argv[] ) {
 
     dataManager.init( parameters );
 
-    fprintf(stderr,"\n----%s----\n\n","loading the training data" );
+    fprintf(stderr,"----%s----\n\n","loading the training data" );
     dataManager.load_training_data(
             parameters.get_property( string("Data::Training::Filename") ) );
 
-    fprintf(stderr,"\n----%s----\n\n","loading the test data" );
-    dataManager.load_test_data(
+    if (!parameters.get_property(string("Data::Testing::Filename")).empty()) {
+        fprintf(stderr,"----%s----\n\n","loading the test data" );
+        dataManager.load_test_data(
             parameters.get_property( string("Data::Testing::Filename") ) );
+    }
 
     // Initialize the stochastic discrimination machine
     fprintf(stderr,"----%s----\n\n","initializing SDM" );
@@ -118,10 +120,11 @@ int main( int argc, char * argv[] ) {
     fprintf(stderr,"%s %.4f s\n", "cpu time: ", cpuTime);
     fprintf(stderr,"%s %.4f\n", "speed up: ", cpuTime/realTime);
 
-    fprintf(stderr,"\n----%s----\n\n","loading the trial data" );
-
-    dataManager.load_trial_data(
+    if (!parameters.get_property(string("Data::Trial::Filename")).empty()) {
+        fprintf(stderr,"\n----%s----\n\n","loading the trial data" );
+        dataManager.load_trial_data(
             parameters.get_property( string("Data::Trial::Filename") ) );
 
-    sdm.process_trial_data( dataManager );
+        sdm.process_trial_data( dataManager );
+    }
 }

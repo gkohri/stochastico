@@ -33,8 +33,8 @@
 #include "rng/random.h"
 #include "rng/random_factory.h"
 #include "rng/ranmar.h"
-#include "stat/roc.h"
 #include "stat/accumulator.h"
+#include "stat/multi_scorecard.h"
 #include "util/functions.h"
 #include "util/properties.h"
 #include "util/invalid_input_error.h"
@@ -49,7 +49,7 @@ using noir::Orthotope;
 using rng::Random;
 using rng::RandomFactory;
 using stat::Accumulator;
-using stat::ROC;
+using stat::MultiScorecard;
 using util::to_numeric;
 using util::Properties;
 
@@ -62,7 +62,7 @@ SDMachine::~SDMachine() {
     }
     discriminators.clear();
 
-    vector<ROC*>::const_iterator rit;
+    vector<MultiScorecard*>::const_iterator rit;
     for (rit = learning_results.begin(); rit != learning_results.end(); ++rit) {
         delete *rit;
     }
@@ -190,13 +190,16 @@ void SDMachine::simple_learning( DataManager &dataManager ) {
     delete[] tid;
     delete[] td;
 
-    ROC *result = test( *(dataManager.get_test_data()) );
+    //Scorecard *result = (Scorecard*) test( *(dataManager.get_test_data()) );
+    MultiScorecard *result = test( *(dataManager.get_test_data()) );
 
-    fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
+    fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
                        "accuracy: ",    result->accuracy(),
                        "error rate: ",  result->error_rate(),
-                       "sensitivity: ", result->sensitivity(),
-                       "specificity: ", result->specificity() );
+                       "M: ",  result->m(),
+                       "sensitivity: ", result->avg_sensitivity(),
+                       "fdr: ", result->avg_false_discovery_rate() );
+
 }
 
 void SDMachine::folded_learning( DataManager &dataManager ) {
@@ -212,6 +215,7 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
 
     Accumulator error_accumulator;
     Accumulator accuracy_accumulator;
+    Accumulator auc_accumulator;
 
     pthread_t *tid = new pthread_t[discriminators.size()];
     thread_data *td = new thread_data[discriminators.size()];
@@ -228,22 +232,26 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
             pthread_join( tid[d], NULL );
         }
 
-        ROC *result = test( *(dataManager.get_partition(f)) );
+        MultiScorecard *result = test(*(dataManager.get_partition(f)));
         error_accumulator.gather( result->error_rate() );
         accuracy_accumulator.gather( result->accuracy() );
+        auc_accumulator.gather( result->m() );
 
-        fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
+        fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
                        "accuracy: ",    result->accuracy(),
                        "error rate: ",  result->error_rate(),
-                       "sensitivity: ", result->sensitivity(),
-                       "specificity: ", result->specificity() );
+                       "sensitivity: ", result->avg_sensitivity(),
+                       "fdr: ", result->avg_false_discovery_rate(),
+                       "m: ", result->m() );
     }
 
-    fprintf(stdout,"\n%s\t\t%.4f\n%s\t%.4f\n%s\t\t%.4f\n%s\t%.4f\n\n",
+    fprintf(stdout,
+                "\n%s\t\t%.4f\n%s\t%.4f\n%s\t\t%.4f\n%s\t%.4f\n%s\t\t%.4f\n\n",
                    "avg. accuracy: ",    accuracy_accumulator.mean(),
                    "avg. error rate: ",  error_accumulator.mean(),
                    "deviation: ", accuracy_accumulator.deviation_population(),
-                   "standard error: ", error_accumulator.standard_error() );
+                   "standard error: ", error_accumulator.standard_error(),
+                   "avg. m: ", auc_accumulator.mean() );
 
     delete[] tid;
     delete[] td;
@@ -311,13 +319,13 @@ extern "C" void* test_discriminators( void *arg ) {
     unsigned num_tests = td->dataStore->size();
     for (unsigned t = 0; t < num_tests; ++t) {
         DataPoint *point = (*(td->dataStore))[t];
-        prediction[td->dis_id][t] = td->dis->test( point );
+        prediction[t][td->dis_id] = td->dis->test( point );
     }
     return NULL;
 }
 
 void SDMachine::clear_learning_results() {
-    vector<ROC*>::const_iterator rit;
+    vector<MultiScorecard*>::const_iterator rit;
     for (rit = learning_results.begin(); rit != learning_results.end(); ++rit) {
         delete *rit;
     }
@@ -325,11 +333,11 @@ void SDMachine::clear_learning_results() {
 }
 
 
-ROC* SDMachine::test( DataStore &test_data ) {
+MultiScorecard* SDMachine::test( DataStore &test_data ) {
     vector<Discriminator*>::const_iterator dit;
     DataStore::const_iterator pit;
 
-    ROC *roc = new ROC();
+    MultiScorecard *scorecard = new MultiScorecard( discriminators.size() );
 
     double best = 1.0;
     int real_color = 0;
@@ -340,9 +348,9 @@ ROC* SDMachine::test( DataStore &test_data ) {
 
     unsigned num_dis = discriminators.size();
     unsigned num_tests = test_data.size();
-    prediction = new double*[num_dis];
-    for (unsigned td = 0; td < num_dis; ++td) {
-        prediction[td] = new double[num_tests];
+    prediction = new double*[num_tests];
+    for (unsigned t = 0; t < num_tests; ++t) {
+        prediction[t] = new double[num_dis];
     }
 
     pthread_t *tid = new pthread_t[discriminators.size()];
@@ -364,36 +372,17 @@ ROC* SDMachine::test( DataStore &test_data ) {
         real_color = test_data[td]->get_color();
         predicted_color = 0;
 
-        for (unsigned d = 0; d < num_dis; ++d) {
-            if ( prediction[d][td] > best ) {
-                best = prediction[d][td];
-                predicted_color = discriminators[d]->get_principal_color();
-            }
-        }
-
-        if ( real_color == 0 ) {
-            if ( real_color == predicted_color ) {
-                roc->record_true_negative();
-            } else {
-                roc->record_false_positive();
-            }
-        } else {
-            if ( real_color == predicted_color ) {
-                roc->record_true_positive();
-            } else {
-                roc->record_false_negative();
-            }
-        }
+        scorecard->record_results(real_color, prediction[td]);
     }
 
-    for (unsigned d = 0; d < num_dis; ++d) {
-        delete[] prediction[d];
+    for (unsigned td = 0; td < num_tests; ++td) {
+        delete[] prediction[td];
     }
     delete[] prediction;
     delete[] tid;
     delete[] td;
 
-    return roc;
+    return scorecard;
 };
 
 void SDMachine::process_trial_data( DataManager &dataManager ) {
@@ -411,9 +400,9 @@ void SDMachine::process( DataStore &trial_data ) {
 
     unsigned num_dis = discriminators.size();
     unsigned num_trials = trial_data.size();
-    prediction = new double*[num_dis];
-    for (unsigned td = 0; td < num_dis; ++td) {
-        prediction[td] = new double[num_trials];
+    prediction = new double*[num_trials];
+    for (unsigned td = 0; td < num_trials; ++td) {
+        prediction[td] = new double[num_dis];
     }
 
     pthread_t *tid = new pthread_t[discriminators.size()];
@@ -435,13 +424,13 @@ void SDMachine::process( DataStore &trial_data ) {
         fprintf(stdout,"%d", trial_data[td]->get_id());
 
         for (unsigned d = 0; d < num_dis; ++d) {
-            fprintf(stdout,",%.6f", prediction[d][td]);
+            fprintf(stdout,",%.6f", prediction[td][d]);
         }
         fprintf(stdout,"\n");
     }
 
-    for (unsigned d = 0; d < num_dis; ++d) {
-        delete[] prediction[d];
+    for (unsigned t = 0; t < num_trials; ++t) {
+        delete[] prediction[t];
     }
     delete[] prediction;
     delete[] tid;

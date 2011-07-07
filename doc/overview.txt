@@ -1,0 +1,35 @@
+/**
+ * @ingroup Namespaces
+ * @{
+ *      @namespace stat 
+ *      @{
+ *          @brief Provides basic statistics.
+ *                 
+ *      @}
+ *
+ *      @namespace noir 
+ *      @{
+ *          @brief Provides classes for handling objects in Noir space
+ *                 
+ *      @}
+ *
+ *      @namespace rng 
+ *      @{
+ *          @brief Random number generators
+ *                 
+ *      @}
+ *
+ *      @namespace util 
+ *      @{
+ *          @brief Contains miscellaneous utility classes and functions
+ *                 
+ *      @}
+ *
+ *      @namespace sdm 
+ *      @{
+ *          @brief Classes implementing a Stochastic Discrimination Machine.
+ *                 
+ *      @}
+ * @}
+ *
+*/

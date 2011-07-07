@@ -23,12 +23,25 @@ VERSION='0.1.0'
 top='.'
 out='build'
 
+import os, shutil
+from waflib.ConfigSet import ConfigSet
+
+#
+# Check command line options
+#
 def options(opt):
         opt.load('compiler_cxx')
 
+#
+# Project configuration 
+#
+# (At the moment, we check for the presences of certain libraries, 
+#  but we need to decide on the course of action when these libraries are not
+#  present.)
+#
 def configure(cnf):
         cnf.check_waf_version(mini='1.6.3')
-        cnf.load('compiler_cxx')
+        cnf.load('compiler_cxx doxygen')
         cnf.env.append_unique('CXXFLAGS', ['-O2', '-g', '-std=c++0x',
                               '-Wall','-mtune=native','-march=native'])
         cnf.check_cxx(lib=['m'], uselib_store='M')
@@ -40,7 +53,9 @@ def configure(cnf):
         cnf.write_config_header('config.h')
         print('→ configuring the project in ' + cnf.path.abspath())
 
-
+#
+# Build the project
+#
 def build(bld):
         srcs = bld.path.ant_glob('src/main/c++/**/*.cc',src='true',bld='true')
         tsrcs = bld.path.ant_glob('src/test/c++/*.cc',src='true',bld='true')
@@ -51,6 +66,19 @@ def build(bld):
             includes = ['.', 'src/main/c++'],
             target='unit-tests', use=['M'])
 
+#
+# Build a distribution
+#
 def dist(ctx):
         ctx.algo      = 'tar.bz2'
         ctx.excl      = '**/.waf-* **/*~ **/*.git **/*.swp **/.lock-* DataSets build junk'
+
+#
+# Build the Documentation
+#
+def docs(cnf):
+        cfgFile = os.path.join(out,os.path.join('c4che','_cache.py'))
+        cnf.env = ConfigSet(cfgFile)
+        cmd='%s doc/doxy.cfg' % cnf.env.DOXYGEN
+        print('Executing the command: %s' % cmd )
+        cnf.exec_command(cmd)
