@@ -34,7 +34,7 @@
 #include "rng/random_factory.h"
 #include "rng/ranmar.h"
 #include "stat/accumulator.h"
-#include "stat/multi_scorecard.h"
+#include "stat/multi_roc.h"
 #include "util/functions.h"
 #include "util/properties.h"
 #include "util/invalid_input_error.h"
@@ -49,7 +49,7 @@ using noir::Orthotope;
 using rng::Random;
 using rng::RandomFactory;
 using stat::Accumulator;
-using stat::MultiScorecard;
+using stat::MultiROC;
 using util::to_numeric;
 using util::Properties;
 
@@ -62,7 +62,7 @@ SDMachine::~SDMachine() {
     }
     discriminators.clear();
 
-    vector<MultiScorecard*>::const_iterator rit;
+    vector<MultiROC*>::const_iterator rit;
     for (rit = learning_results.begin(); rit != learning_results.end(); ++rit) {
         delete *rit;
     }
@@ -190,8 +190,8 @@ void SDMachine::simple_learning( DataManager &dataManager ) {
     delete[] tid;
     delete[] td;
 
-    //Scorecard *result = (Scorecard*) test( *(dataManager.get_test_data()) );
-    MultiScorecard *result = test( *(dataManager.get_test_data()) );
+    //ROC *result = (ROC*) test( *(dataManager.get_test_data()) );
+    MultiROC *result = test( *(dataManager.get_test_data()) );
 
     fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
                        "accuracy: ",    result->accuracy(),
@@ -232,7 +232,7 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
             pthread_join( tid[d], NULL );
         }
 
-        MultiScorecard *result = test(*(dataManager.get_partition(f)));
+        MultiROC *result = test(*(dataManager.get_partition(f)));
         error_accumulator.gather( result->error_rate() );
         accuracy_accumulator.gather( result->accuracy() );
         auc_accumulator.gather( result->m() );
@@ -325,7 +325,7 @@ extern "C" void* test_discriminators( void *arg ) {
 }
 
 void SDMachine::clear_learning_results() {
-    vector<MultiScorecard*>::const_iterator rit;
+    vector<MultiROC*>::const_iterator rit;
     for (rit = learning_results.begin(); rit != learning_results.end(); ++rit) {
         delete *rit;
     }
@@ -333,11 +333,11 @@ void SDMachine::clear_learning_results() {
 }
 
 
-MultiScorecard* SDMachine::test( DataStore &test_data ) {
+MultiROC* SDMachine::test( DataStore &test_data ) {
     vector<Discriminator*>::const_iterator dit;
     DataStore::const_iterator pit;
 
-    MultiScorecard *scorecard = new MultiScorecard( discriminators.size() );
+    MultiROC *roc = new MultiROC( discriminators.size() );
 
     double best = 1.0;
     int real_color = 0;
@@ -372,7 +372,7 @@ MultiScorecard* SDMachine::test( DataStore &test_data ) {
         real_color = test_data[td]->get_color();
         predicted_color = 0;
 
-        scorecard->record_results(real_color, prediction[td]);
+        roc->record_results(real_color, prediction[td]);
     }
 
     for (unsigned td = 0; td < num_tests; ++td) {
@@ -382,7 +382,7 @@ MultiScorecard* SDMachine::test( DataStore &test_data ) {
     delete[] tid;
     delete[] td;
 
-    return scorecard;
+    return roc;
 };
 
 void SDMachine::process_trial_data( DataManager &dataManager ) {

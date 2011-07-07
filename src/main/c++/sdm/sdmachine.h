@@ -25,7 +25,7 @@
 #include "sdm/discriminator.h"
 #include "sdm/data_manager.h"
 #include "rng/random.h"
-#include "stat/multi_scorecard.h"
+#include "stat/multi_roc.h"
 #include "util/properties.h"
 
 namespace sdm {
@@ -71,7 +71,7 @@ class SDMachine {
 
  private:
     std::vector<Discriminator*> discriminators;
-    std::vector<stat::MultiScorecard*> learning_results;
+    std::vector<stat::MultiROC*> learning_results;
     rng::Random *uniform;
     util::Properties *sdmParameters;
     ModelTypes::Types modelTypes;
@@ -89,7 +89,7 @@ class SDMachine {
     void ready_discriminators( DataManager &dataManager, const int &part );
     void train_discriminators();
 
-    stat::MultiScorecard* test( DataStore &testData );
+    stat::MultiROC* test( DataStore &testData );
 
     void process( DataStore &trialData );
 

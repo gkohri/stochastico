@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include "multi_scorecard.h"
+#include "multi_roc.h"
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +32,11 @@ using std::numeric_limits;
 using std::pair;
 using std::vector;
 
+/**
+ * A pair comparison functional that only takes into account the first
+ * member of the pair.  In cases where the ordering on the second member of
+ * the pair doesn't matter, this might be more efficient.
+ */
 struct LessFirstOnly :
       public binary_function<pair<double,int>, pair<double,int>, bool> {
     inline bool
@@ -40,8 +45,7 @@ struct LessFirstOnly :
     }
 };
 
-
-void MultiScorecard::process() {
+void MultiROC::process() {
     for ( size_t c = 0; c < numClasses; ++c ){
         correct[c] = 0.0;
         wrong[c] = 0.0;
@@ -72,7 +76,7 @@ void MultiScorecard::process() {
     modified = false;
 }
 
-double MultiScorecard::accuracy(){
+double MultiROC::accuracy(){
     if ( modified ) process();
     double t_correct = 0.0;
     double total = 0.0;
@@ -84,7 +88,7 @@ double MultiScorecard::accuracy(){
 }
 
 
-double MultiScorecard::error_rate(){
+double MultiROC::error_rate(){
     if ( modified ) process();
     double t_wrong = 0.0;
     double t_total = 0.0;
@@ -95,18 +99,18 @@ double MultiScorecard::error_rate(){
     return (t_wrong/t_total);
 }
 
-double MultiScorecard::error_rate(const int &class_id){
+double MultiROC::error_rate(const int &class_id){
     if ( modified ) process();
     return (wrong[class_id]/examples[class_id]);
 }
 
 
-double MultiScorecard::sensitivity(const int &class_id){
+double MultiROC::sensitivity(const int &class_id){
     if ( modified ) process();
     return (correct[class_id]/examples[class_id]);
 }
 
-double MultiScorecard::avg_sensitivity(){
+double MultiROC::avg_sensitivity(){
     if ( modified ) process();
     double sensitivity = 0.0;
     for ( size_t c = 0; c < numClasses; ++c ){
@@ -116,12 +120,12 @@ double MultiScorecard::avg_sensitivity(){
     return (sensitivity/static_cast<double>(numClasses));
 }
 
-double MultiScorecard::precision(const int &class_id){
+double MultiROC::precision(const int &class_id){
     if ( modified ) process();
     return (correct[class_id]/(correct[class_id] + fp[class_id]));
 }
 
-double MultiScorecard::avg_precision(){
+double MultiROC::avg_precision(){
     if ( modified ) process();
     double precision = 0.0;
     for ( size_t c = 0; c < numClasses; ++c ){
@@ -130,12 +134,12 @@ double MultiScorecard::avg_precision(){
     return (precision/static_cast<double>(numClasses));
 }
 
-double MultiScorecard::false_discovery_rate(const int &class_id){
+double MultiROC::false_discovery_rate(const int &class_id){
     if ( modified ) process();
     return (fp[class_id]/(correct[class_id] + fp[class_id]));
 }
 
-double MultiScorecard::avg_false_discovery_rate(){
+double MultiROC::avg_false_discovery_rate(){
     if ( modified ) process();
     double fdr = 0.0;
     for ( size_t c = 0; c < numClasses; ++c ){
@@ -146,7 +150,7 @@ double MultiScorecard::avg_false_discovery_rate(){
     return (fdr/static_cast<double>(numClasses));
 }
 
-void MultiScorecard::calculate_m() {
+void MultiROC::calculate_m() {
 
     m_ = 0.0;
 
@@ -159,7 +163,7 @@ void MultiScorecard::calculate_m() {
     m_ = 2.0*m_/static_cast<double>(numClasses*(numClasses-1));
 }
 
-double MultiScorecard::ahat( const int &i, const int &j){
+double MultiROC::ahat( const int &i, const int &j){
 
     vector<pair<double,int>> i_scores;
     vector<pair<double,int>> j_scores;
@@ -179,7 +183,7 @@ double MultiScorecard::ahat( const int &i, const int &j){
 }
 
 
-double MultiScorecard::auc( vector<pair<double,int>> scores ){
+double MultiROC::auc( vector<pair<double,int>> scores ){
 
     make_heap( scores.begin(), scores.end(), LessFirstOnly() );
     sort_heap( scores.begin(), scores.end(), LessFirstOnly() );

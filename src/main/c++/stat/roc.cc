@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include "scorecard.h"
+#include "roc.h"
 
 #include <algorithm>
 #include <cmath>
@@ -38,8 +38,7 @@ struct LessFirstOnly :
     }
 };
 
-
-void Scorecard::optimize_roc() {
+void ROC::optimize_roc() {
     int tp_ = 0;
     int fp_ = 0;
     int num_acc = 0;
