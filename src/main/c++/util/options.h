@@ -30,63 +30,72 @@ namespace util {
  */
 class Option {
  public:
-        /// A constant indicating that the option requires an argument
-        static const bool VALUE_REQUIRED    = true;
+    /// A constant indicating that the option requires an argument
+    static const bool VALUE_REQUIRED    = true;
 
-        /// A constant indicating that the option doe not require an argument
-        static const bool NO_VALUE_REQUIRED = false;
-
-        /**
-         * This friend method reads in all the command line arguements
-         */
-        friend void get_command_line_options( int, char **, 
-                                              std::vector<Option*>& );
-
-        /**
-         * This friend method prints out a usage message
-         */
-        friend void usage( char *, std::vector<Option*>& );
-
-        Option( std::string op_name, std::string def_val, bool value_req ) : 
-                    name( op_name ), value(""),
-                    default_value( def_val ), value_required( value_req ) {}
-
-        virtual ~Option() {}
+    /// A constant indicating that the option doe not require an argument
+    static const bool NO_VALUE_REQUIRED = false;
 
 
-        /**
-         * retrieves the name of this option
-         */
-        std::string get_name() const {
-            return name;
-        }
+    Option( std::string op_name, std::string def_val, bool value_req ) : 
+                name( op_name ), value(""), default_value( def_val ), 
+                value_required( value_req ) {}
 
-        /**
-         * retrieves the value of this option
-         */
-        std::string get_value() const {
-            return value;
-        }
+    virtual ~Option() {}
 
-        /**
-         * retrieves the default value of this option
-         */
-        std::string get_default_value() const {
-            return default_value;
-        }
+    /**
+     * This method reads in all the command line options
+     */
+    static void process_all_options( int, char **, std::vector<Option*>& );
 
-        /**
-         * checks whether a value is required for this option
-         */
-        bool is_value_required() const {
-            return value_required;
-        }
+    /**
+     * This method prints out a usage message
+     */
+    static void usage( char *, std::vector<Option*>& );
+
+    /**
+     * retrieves the name of this option
+     */
+    std::string get_name() const {
+        return name;
+    }
+
+    /**
+     * retrieves the value of this option
+     */
+    std::string get_value() const {
+        return value;
+    }
+
+    /**
+     * sets the value of this option
+     */
+    void set_value(std::string const &a_value ) {
+        value = a_value;
+    }
+
+    /**
+     * retrieves the default value of this option
+     */
+    std::string get_default_value() const {
+        return default_value;
+    }
+
+    /**
+     * checks whether a value is required for this option
+     */
+    bool is_value_required() const {
+        return value_required;
+    }
 
  private:
-        std::string  name;
-        std::string  value;
-        std::string  default_value;
-        bool value_required;
+    std::string  name;
+    std::string  value;
+    std::string  default_value;
+    bool value_required;
+
+        
+
 };
 
 }

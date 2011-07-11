@@ -26,11 +26,11 @@
 
 namespace util {
 
-/*
- A simple function for tokenizing a string based upon a set of delimiters.
- By default, any white-space character can be used a delimiter: " \t\f\v\n\r"
- Note: The type "ContainerT" must be a container for the string type.
-*/
+/**
+ * A simple function for tokenizing a string based upon a set of delimiters.
+ * By default, any white-space character can be used a delimiter: " \t\f\v\n\r"
+ * Note: The type "ContainerT" must be a container for the string type.
+ */
 template <class ContainerT>
 inline void tokenize(const std::string& str, ContainerT& tokens, 
                      const std::string& delimiters = Delimiters::WHITE_SPACE ) {
@@ -53,9 +53,9 @@ inline void tokenize(const std::string& str, ContainerT& tokens,
 static std::stringstream numeric_interpreter__;
 static std::stringstream converter__;
 
-/*
-    Converts a string to type Target
-*/
+/**
+ *  Converts a string to type Target
+ */
 template <typename Target> 
 inline void to_numeric(std::string const &s, Target &value) {
     numeric_interpreter__.clear();
@@ -69,9 +69,9 @@ inline void to_numeric(std::string const &s, Target &value) {
     }
 };
 
-/*
-    Converts a type to a string
-*/
+/**
+ *   Converts a type to a string
+ */
 template<typename Source>
 inline std::string to_string( Source arg ){
     converter__.clear();
@@ -84,7 +84,9 @@ inline std::string to_string( Source arg ){
     return result;
 }
 
-// Trims white spaces surrounding strings
+/**
+ * Trims white spaces surrounding strings
+ */
 inline std::string trim( const std::string &s )
 {
     size_t last_non_white = s.find_last_not_of( Delimiters::WHITE_SPACE );
@@ -96,7 +98,9 @@ inline std::string trim( const std::string &s )
     return s.substr( first_non_white, ( last_non_white - first_non_white + 1 ));
 };
 
-// Trims quotes surrounding strings
+/**
+ * Trims quotes surrounding strings
+ */
 inline std::string trim_quotes( const std::string &s )
 {
     std::string::const_iterator bit = s.begin();

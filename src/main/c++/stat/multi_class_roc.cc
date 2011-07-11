@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include "multi_roc.h"
+#include "multi_class_roc.h"
 
 #include <algorithm>
 #include <cmath>
@@ -45,7 +45,7 @@ struct LessFirstOnly :
     }
 };
 
-void MultiROC::process() {
+void MultiClassROC::process() {
     for ( size_t c = 0; c < numClasses; ++c ){
         correct[c] = 0.0;
         wrong[c] = 0.0;
@@ -76,7 +76,7 @@ void MultiROC::process() {
     modified = false;
 }
 
-double MultiROC::accuracy(){
+double MultiClassROC::accuracy(){
     if ( modified ) process();
     double t_correct = 0.0;
     double total = 0.0;
@@ -88,7 +88,7 @@ double MultiROC::accuracy(){
 }
 
 
-double MultiROC::error_rate(){
+double MultiClassROC::error_rate(){
     if ( modified ) process();
     double t_wrong = 0.0;
     double t_total = 0.0;
@@ -99,18 +99,18 @@ double MultiROC::error_rate(){
     return (t_wrong/t_total);
 }
 
-double MultiROC::error_rate(const int &class_id){
+double MultiClassROC::error_rate(const int &class_id){
     if ( modified ) process();
     return (wrong[class_id]/examples[class_id]);
 }
 
 
-double MultiROC::sensitivity(const int &class_id){
+double MultiClassROC::sensitivity(const int &class_id){
     if ( modified ) process();
     return (correct[class_id]/examples[class_id]);
 }
 
-double MultiROC::avg_sensitivity(){
+double MultiClassROC::avg_sensitivity(){
     if ( modified ) process();
     double sensitivity = 0.0;
     for ( size_t c = 0; c < numClasses; ++c ){
@@ -120,12 +120,12 @@ double MultiROC::avg_sensitivity(){
     return (sensitivity/static_cast<double>(numClasses));
 }
 
-double MultiROC::precision(const int &class_id){
+double MultiClassROC::precision(const int &class_id){
     if ( modified ) process();
     return (correct[class_id]/(correct[class_id] + fp[class_id]));
 }
 
-double MultiROC::avg_precision(){
+double MultiClassROC::avg_precision(){
     if ( modified ) process();
     double precision = 0.0;
     for ( size_t c = 0; c < numClasses; ++c ){
@@ -134,12 +134,12 @@ double MultiROC::avg_precision(){
     return (precision/static_cast<double>(numClasses));
 }
 
-double MultiROC::false_discovery_rate(const int &class_id){
+double MultiClassROC::false_discovery_rate(const int &class_id){
     if ( modified ) process();
     return (fp[class_id]/(correct[class_id] + fp[class_id]));
 }
 
-double MultiROC::avg_false_discovery_rate(){
+double MultiClassROC::avg_false_discovery_rate(){
     if ( modified ) process();
     double fdr = 0.0;
     for ( size_t c = 0; c < numClasses; ++c ){
@@ -150,7 +150,7 @@ double MultiROC::avg_false_discovery_rate(){
     return (fdr/static_cast<double>(numClasses));
 }
 
-void MultiROC::calculate_m() {
+void MultiClassROC::calculate_m() {
 
     m_ = 0.0;
 
@@ -163,7 +163,7 @@ void MultiROC::calculate_m() {
     m_ = 2.0*m_/static_cast<double>(numClasses*(numClasses-1));
 }
 
-double MultiROC::ahat( const int &i, const int &j){
+double MultiClassROC::ahat( const int &i, const int &j){
 
     vector<pair<double,int>> i_scores;
     vector<pair<double,int>> j_scores;
@@ -183,7 +183,7 @@ double MultiROC::ahat( const int &i, const int &j){
 }
 
 
-double MultiROC::auc( vector<pair<double,int>> scores ){
+double MultiClassROC::auc( vector<pair<double,int>> scores ){
 
     make_heap( scores.begin(), scores.end(), LessFirstOnly() );
     sort_heap( scores.begin(), scores.end(), LessFirstOnly() );

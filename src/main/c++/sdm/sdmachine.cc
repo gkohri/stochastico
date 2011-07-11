@@ -29,12 +29,11 @@
 #include "sdm/model.h"
 #include "sdm/ball_model.h"
 #include "sdm/orthotope_model.h"
-#include "rng/mt19937.h"
 #include "rng/random.h"
 #include "rng/random_factory.h"
 #include "rng/ranmar.h"
 #include "stat/accumulator.h"
-#include "stat/multi_roc.h"
+#include "stat/multi_class_roc.h"
 #include "util/functions.h"
 #include "util/properties.h"
 #include "util/invalid_input_error.h"
@@ -49,7 +48,7 @@ using noir::Orthotope;
 using rng::Random;
 using rng::RandomFactory;
 using stat::Accumulator;
-using stat::MultiROC;
+using stat::MultiClassROC;
 using util::to_numeric;
 using util::Properties;
 
@@ -62,7 +61,7 @@ SDMachine::~SDMachine() {
     }
     discriminators.clear();
 
-    vector<MultiROC*>::const_iterator rit;
+    vector<MultiClassROC*>::const_iterator rit;
     for (rit = learning_results.begin(); rit != learning_results.end(); ++rit) {
         delete *rit;
     }
@@ -190,8 +189,7 @@ void SDMachine::simple_learning( DataManager &dataManager ) {
     delete[] tid;
     delete[] td;
 
-    //ROC *result = (ROC*) test( *(dataManager.get_test_data()) );
-    MultiROC *result = test( *(dataManager.get_test_data()) );
+    MultiClassROC *result = test( *(dataManager.get_test_data()) );
 
     fprintf(stdout,"\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n%s%.4f\n\n",
                        "accuracy: ",    result->accuracy(),
@@ -232,7 +230,7 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
             pthread_join( tid[d], NULL );
         }
 
-        MultiROC *result = test(*(dataManager.get_partition(f)));
+        MultiClassROC *result = test(*(dataManager.get_partition(f)));
         error_accumulator.gather( result->error_rate() );
         accuracy_accumulator.gather( result->accuracy() );
         auc_accumulator.gather( result->m() );
@@ -325,7 +323,7 @@ extern "C" void* test_discriminators( void *arg ) {
 }
 
 void SDMachine::clear_learning_results() {
-    vector<MultiROC*>::const_iterator rit;
+    vector<MultiClassROC*>::const_iterator rit;
     for (rit = learning_results.begin(); rit != learning_results.end(); ++rit) {
         delete *rit;
     }
@@ -333,11 +331,11 @@ void SDMachine::clear_learning_results() {
 }
 
 
-MultiROC* SDMachine::test( DataStore &test_data ) {
+MultiClassROC* SDMachine::test( DataStore &test_data ) {
     vector<Discriminator*>::const_iterator dit;
     DataStore::const_iterator pit;
 
-    MultiROC *roc = new MultiROC( discriminators.size() );
+    MultiClassROC *roc = new MultiClassROC( discriminators.size() );
 
     double best = 1.0;
     int real_color = 0;

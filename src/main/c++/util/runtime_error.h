@@ -23,10 +23,10 @@
 
 namespace util {
 
-/*
-* A wrapper class around the std::runtime_error exception to provide the
-* filename and line number at which the exception occured.
-*/
+/**
+ * A wrapper class around the std::runtime_error exception to provide the
+ * filename and line number at which the exception occured.
+ */
 
 class RuntimeError : public std::runtime_error {
  public:

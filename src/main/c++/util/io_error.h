@@ -24,10 +24,10 @@
 
 namespace util {
 
-/*
-* A wrapper class around the std::range_error to provide the
-* filename and line number at which the exception occured.
-*/
+/**
+ * A wrapper class around the std::runtime_error to provide the
+ * filename and line number at which the exception occured.
+ */
 
 class IOError : public std::runtime_error {
  public:

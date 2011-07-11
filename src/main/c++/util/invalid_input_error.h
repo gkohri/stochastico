@@ -24,10 +24,10 @@
 
 namespace util {
 
-/*
-* A wrapper class around the std::range_error to provide the
-* filename and line number at which the exception occured.
-*/
+/**
+ * A wrapper class around the std::range_error to provide the
+ * filename and line number at which the exception occured.
+ */
 
 class InvalidInputError : public std::range_error {
  public:

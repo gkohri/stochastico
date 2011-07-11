@@ -19,19 +19,19 @@
 
 namespace rng {
 
-/* 
-    An interface for psuedo random number generators.
-*/
+/** 
+ *  An interface for psuedo random number generators.
+ */
 class Random {
  public:
 
     /**
-     * Generate the next random number uniformly in the range [0,1]
+     * Generate a random number uniformly in the range [0.0,1.0]
      */
     virtual double next() = 0;
 
     /**
-     * Generate the next random number uniformly in the range [0,2^32]
+     * Generate a random, unsigned integer uniformly in the range [0,2^32-1]
      */
     virtual unsigned next_uint() = 0;
 

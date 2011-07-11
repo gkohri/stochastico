@@ -25,7 +25,7 @@
 
 namespace util {
 
-/*
+/**
  * Common delimiters for use with CSV and Property files
  */
 struct Delimiters{

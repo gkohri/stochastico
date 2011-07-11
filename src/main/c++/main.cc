@@ -57,7 +57,7 @@ int main( int argc, char * argv[] ) {
 
     // retrieve the command line options
 
-    get_command_line_options( argc, argv, prog_options );
+    Option::process_all_options( argc, argv, prog_options );
 
     if ( !version.get_value().empty() ) {
         fprintf(stderr,"%s version %s\n", APPNAME, VERSION);
@@ -66,7 +66,7 @@ int main( int argc, char * argv[] ) {
 
     if ( param_file.get_value().empty() ) {
         fprintf(stderr,"%s\n", "Parameter file not found!");
-        usage( argv[0], prog_options );
+        Option::usage( argv[0], prog_options );
     }
 
     Properties parameters;

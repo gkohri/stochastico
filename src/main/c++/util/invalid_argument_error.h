@@ -24,10 +24,10 @@
 
 namespace util {
 
-/*
-* A wrapper class around the std::invalid_argument exception to provide the
-* filename and line number at which the exception occured.
-*/
+/**
+ * A wrapper class around the std::invalid_argument exception to provide the
+ * filename and line number at which the exception occured.
+ */
 
 class InvalidArgumentError : public std::range_error {
  public:

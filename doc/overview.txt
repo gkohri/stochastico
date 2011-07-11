@@ -32,4 +32,20 @@
  *      @}
  * @}
  *
+ * @{
+ *      @mainpage 
+ *      @{
+ *          Stochastico is an open source implementation of stochastic 
+ *          discrimination (SD).  SD is a machine learning algorithm used 
+ *          for categorization, pattern recognition and predictive modeling.
+ *          It is the most general algorithm in the ensemble learning class
+ *          of algorithms.
+ *
+ *          This software is an early release alpha version.  
+ *          See the src/test/resources directory for a list of the data 
+ *          sets on which this software has been successfully tested.
+ *                 
+ *      @}
+ *
+ * @}
 */

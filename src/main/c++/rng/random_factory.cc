@@ -18,11 +18,10 @@
 #include "rng/random_factory.h"
 
 #include <cstdlib>
-#include <stdexcept>
+#include <cstdio>
 
 #include "rng/random.h"
 #include "rng/ranmar.h"
-#include "rng/zran.h"
 
 namespace rng {
 
@@ -30,28 +29,28 @@ using std::runtime_error;
 using std::mutex;
 
 RandomFactory* RandomFactory::instance = 0;
-unsigned RandomFactory::rfSeed = 0;
-mutex RandomFactory::rfMutex;
+unsigned RandomFactory::seed = 0;
+mutex RandomFactory::synchronize;
 
-void RandomFactory::set_seed( const unsigned seed) {
-    if ( RandomFactory::rfSeed == 0 ) {
-        rfMutex.lock();
-        if ( RandomFactory::rfSeed == 0 ) {
-            RandomFactory::rfSeed = seed;
+void RandomFactory::set_seed( const unsigned& useed) {
+    if ( RandomFactory::seed == 0 ) {
+        synchronize.lock();
+        if ( RandomFactory::seed == 0 ) {
+            RandomFactory::seed = useed;
         }
-        rfMutex.unlock();
+        synchronize.unlock();
     }
 }
 
 
 RandomFactory* RandomFactory::get_instance() {
     if ( RandomFactory::instance == 0 ){
-        rfMutex.lock();
+        synchronize.lock();
         if ( RandomFactory::instance == 0 ){
             RandomFactory::instance = create_instance();
             schedule_for_destruction( RandomFactory::destroy );
         }
-        rfMutex.unlock(); 
+        synchronize.unlock();
     }
     return RandomFactory::instance;
 }
@@ -69,7 +68,10 @@ void RandomFactory::destroy(){
 
 void RandomFactory::schedule_for_destruction(void (*fun)()){
     if ( atexit( fun ) != 0  ) {
-        throw runtime_error( "atexit failed for PRNG factory !");
+        // It would be extreamly rare to get here, but if it happens it
+        // does no real harm...
+        fprintf(stderr, 
+                  "RandomFactory: Warning: Unable to set exit function.\n");
     }
 }
 
@@ -91,11 +93,13 @@ RandomFactory::RandomFactory():numIJseeds(31329), numKLseeds(30082),
 
     // Shuffle the lists using Knuth's in-place shuffle algorithm
 
-    if ( RandomFactory::rfSeed == 0 ) RandomFactory::rfSeed = 868051;
-    Zran zran(RandomFactory::rfSeed);
+    if ( RandomFactory::seed == 0 ) RandomFactory::seed = 868051;
+
+    unsigned un = 1103515245*seed + 1013904243;
 
     for ( int i = numIJseeds-1; i > 0; --i ){
-        int k = zran.next_int(i);
+        un = 1103515245*un + 1013904243;
+        int k = (un >> 17) % i;
         int temp = ijSeeds[i];
         ijSeeds[i] = ijSeeds[k];
         ijSeeds[k] = temp;
@@ -103,7 +107,8 @@ RandomFactory::RandomFactory():numIJseeds(31329), numKLseeds(30082),
 
 
     for ( int j = numKLseeds-1; j > 0; --j ){
-        int k = zran.next_int(j);
+        un = 1103515245*un + 1013904243;
+        int k = (un >> 17) % j;
         int temp = klSeeds[j]; 
         klSeeds[j] = klSeeds[k]; 
         klSeeds[k] = temp;
@@ -116,7 +121,7 @@ RandomFactory::~RandomFactory() {
 }
 
 Random* RandomFactory::get_rng(){
-    rfMutex.lock();
+    synchronize.lock();
 
     int ij = ijSeeds[currentIJ];
     int kl = klSeeds[currentKL];
@@ -125,11 +130,15 @@ Random* RandomFactory::get_rng(){
     if ( ++currentKL == numKLseeds ){
         currentKL = 0;
         if ( ++currentIJ == numIJseeds ){
-            throw runtime_error( "Exhausted all possible parallel RNGs!");
+            // Whether this ever happens in our life time remains to be
+            // seen...
+            fprintf(stderr, 
+                    "RandomFactory: Error: More than 942 million RNGs!");
+            currentIJ = 0;
         }
     }
 
-    rfMutex.unlock();
+    synchronize.unlock();
     return rng;
 }
 

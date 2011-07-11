@@ -22,7 +22,7 @@
 
 namespace stat {
 
-/*
+/**
  * A class for accumulating the mean and variance on-line using
  * Welford's algorithm. 
  *
@@ -36,7 +36,7 @@ class Accumulator {
 
     virtual ~Accumulator() {}
 
-    /*
+    /**
      * Add one new data value to the accumulator
      */
     inline void gather( double const &x ) {
@@ -47,7 +47,7 @@ class Accumulator {
         cSum += x;
     }
 
-    /*
+    /**
      * Add a range of data values to the accumulator
      */
     template <typename InputIterator>
@@ -78,45 +78,50 @@ class Accumulator {
     }
 
 
-    /*
+    /**
      * Returns the number of values collected thus far
      */
     inline double number() {return cN;}
 
-    /*
+    /**
      * Returns the sum of all values collected.
      */
     inline double sum() {return cSum;}
 
-    /*
+    /**
      * Returns the mean of all values collected.
      */
     inline double mean() {return cMean;}
 
-    /*
+    /**
      * Returns the standard error in the mean.
      */
     inline double standard_error() {return sqrt(cM2/((cN-1.0)*cN));}
 
-    /*
-     * Calculates the variance assuming the values collected so far 
-     * amount to the all the values that can be collected.
+    /**
+     * Calculates the variance assuming the values collected
+     * amount to all values that can be collected.
+     * 
+     * If the values collecte do not cover the entirety of the population,
+     * this method will yield a biased sample variance.
      */
     inline double variance_population() {return cM2/cN;}
 
-    /*
+    /**
      * Calculates the variance assuming the values collected so far 
-     * are only a sample of all values that can be collected.
+     * amount to a sub-set of all the values that can possibly be collected.
+     * 
+     * This is known as the unbiased sample variance.
      */
     inline double variance_sample() {return cM2/(cN-1.0);}
 
-    /*
+    /**
      * This is a convenience method as the deviation is the
      * square root of the variance.
      */
     inline double deviation_population() {return sqrt(cM2/cN);}
 
-    /*
+    /**
      * This is a convenience method as the deviation is the
      * square root of the variance.
      */

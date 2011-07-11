@@ -27,11 +27,10 @@
 
 namespace util {
 
-/*
-* Thrown when an error occurs while attempting to convert a string to a
-* number.
-*/
-
+/**
+ * Thrown when an error occurs while attempting to convert a string to a
+ * number.
+ */
 class NumberFormatError : public std::range_error {
  public:
     NumberFormatError(const char *file, const int  &line,

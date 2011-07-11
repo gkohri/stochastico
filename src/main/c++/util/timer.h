@@ -17,23 +17,19 @@
 #ifndef UTIL_TIMER_H
 #define UTIL_TIMER_H
 
-/**
- * A class for timing routines
- */
-
 #include <cmath>
 #include <ctime>
 
 namespace util {
 
-/*
+/**
  * A class for timing sections of code.  It measures the real time and cpu
  * time between calls.
  */
 class Timer{
  public:
 
-    /*
+    /**
      * Creates a new timer and starts it running.
      */
     Timer() {
@@ -67,7 +63,7 @@ class Timer{
 
     ~Timer(){}
 
-    /*
+    /**
      * Retrieves the resolution of this timer in nanoseconds
      */
     long getResolutionNS(){
@@ -75,11 +71,11 @@ class Timer{
                                         realResolutionNS : cpuResolutionNS ;
     }
 
-    /*
+    /**
      * Returns the time elapsed in seconds since the last time this
      * method was called or, if this is the first time it has been
      * called, since the timer was created.
-    */
+     */
     void elapsed( double &realTime, double &cpuTime){
         timespec now;
 

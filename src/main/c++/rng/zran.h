@@ -19,21 +19,20 @@
 
 #include "rng/random.h"
 
-/**  The Zran random number generator class.
-
-     Zran is a 32-bit random number generator proposed by 
-     G. Marsaglia and A. Zaman, Comp. in Phys., vol. 8 (1994) 117.
-     The period is 2**125 and it works on all 32-bit machines. 
-
-*/
-
 namespace rng {
 
+/**  The Zran random number generator class.
+ *
+ *   Zran is a 32-bit random number generator proposed by 
+ *   G. Marsaglia and A. Zaman, Comp. in Phys., vol. 8 (1994) 117.
+ *   The period is 2**125 and it works on all 32-bit machines. 
+ */
 class Zran : public virtual Random {
  public:
 
-/// Generates the next random number in the sequence
-
+    /**
+     *  Generates the next random number in the sequence
+     */
     unsigned  next_uint() {
         int s;
 
@@ -49,9 +48,10 @@ class Zran : public virtual Random {
         return ((z = s) + (n = 69069u*n + 1013904243u));
     }
 
-/** Generates the next random number in the sequence and 
-    returns its double precision representation. */
-
+    /** 
+     * Generates the next random number in the sequence and 
+     * returns its double precision representation. 
+     */
     double next() {
         return ( static_cast<double>(next_uint())*(1.0/4294967295.0) );
     }
@@ -62,8 +62,9 @@ class Zran : public virtual Random {
     }
 
 
-/// Resets the random number generator
-
+    /**
+     *  Resets the random number generator
+     */
     void reset(unsigned  seed) {
         x = 521288629u;
         y = 362436069u;
@@ -72,19 +73,22 @@ class Zran : public virtual Random {
         n = seed;
     }
 
-/// default constructor
-
+    /**
+     *  default constructor
+     */
     Zran(): n(1131199209u), x(521288629u), y(362436069u), z(1613801u), c(1u) {}
 
-/// normal constructor
-
+    /**
+     *  normal constructor
+     */
     Zran( const unsigned  &nn,
           const unsigned  &xx = 521288629u, 
           const unsigned  &yy = 362436069u, 
-          const unsigned  &zz = 1613801u   ):n(nn), x(xx), y(yy), z(zz), c(1u) {}
+          const unsigned  &zz = 1613801u ):n(nn), x(xx), y(yy), z(zz), c(1u) {}
 
-/// destructor
-
+    /**
+     *  destructor
+     */
     virtual ~Zran() {}
 
  private:

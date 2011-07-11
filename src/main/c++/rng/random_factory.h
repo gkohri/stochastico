@@ -25,28 +25,28 @@
 
 namespace rng {
 
-/*
-* A thread safe factory class for creating random number generators for
-* multiple threads running in parallel.  Calls to get_rng() return one of
-* 900 million possible random number generators each of which has a period
-* greater than 10^45. The random number generators are returned in sequence 
-* to ensure repeatability of trials.
-*/
+/**
+ * A thread safe factory class for creating random number generators for
+ * multiple threads running in parallel.  Calls to get_rng() return one of
+ * 942 million possible random number generators each of which has a period
+ * greater than 10^45. The random number generators are returned in sequence 
+ * to ensure repeatability of trials.
+ */
 class RandomFactory {
  public:
-    /*
+    /**
      * The set_seed() method must be called before the first 
      * call to get_instance(), afterwards it  will have no effect. A second or
      * subsequent call to set_seed has not effect.
      */
-    static void set_seed( const unsigned seed);
+    static void set_seed( const unsigned &useed);
 
-    /*
+    /**
      * Get an instance of the RandomFactory.
      */
     static RandomFactory* get_instance();
 
-    /*
+    /**
      * Get an new random number generator. The random number generators
      * returned by this call are not thread safe. Each thread should call this
      * method to get its own random number generator.
@@ -60,7 +60,7 @@ class RandomFactory {
  private:
 
     static RandomFactory *instance;
-    static unsigned rfSeed;
+    static unsigned seed;
 
     const int numIJseeds;
     const int numKLseeds;
@@ -69,13 +69,13 @@ class RandomFactory {
     int *ijSeeds;
     int *klSeeds;
 
-    static std::mutex rfMutex;
+    static std::mutex synchronize;
 
     RandomFactory();
     virtual ~RandomFactory();
 
-    RandomFactory(const RandomFactory&) = delete;
-    RandomFactory& operator=(const RandomFactory&) = delete;
+    RandomFactory(const RandomFactory&);
+    RandomFactory& operator=(const RandomFactory&);
 
 
     static RandomFactory* create_instance();

@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#ifndef STAT_MULTI_ROC_H
-#define STAT_MULTI_ROC_H
+#ifndef STAT_MULTI_CLASS_ROC_H
+#define STAT_MULTI_CLASS_ROC_H
 
 #include <array>
 #include <cmath>
@@ -34,19 +34,19 @@ namespace stat {
  * instance is not a single numerical value, but a set of numerical
  * values, one for each of the possible classes.
  */
-class MultiROC {
+class MultiClassROC {
  public:
 /**
  * Create a new instance capable of handling the specified number of classes.
  */
-    explicit MultiROC(const int &num_classes) : numClasses(num_classes),
+    explicit MultiClassROC(const int &num_classes) : numClasses(num_classes),
                    all(), correct(num_classes), 
                    wrong(num_classes), examples(num_classes), 
                    fp(num_classes),
                    modified(0), m_(0) {}
 
 
-    virtual ~MultiROC() {}
+    virtual ~MultiClassROC() {}
 
 /**
  * Retrieves the number of classes this instance can handle.
@@ -60,17 +60,18 @@ class MultiROC {
  * 
  * @param target_class the class to which this instance belongs
  * @param results an iterator over the scores for each class. The scores
- *        should always be in the same order.
+ *        should always be in the same order and there should be one score
+ *        for each class.
  */
     template <typename InputIterator>
     void record_results( const int &target_class, InputIterator results) {
-        std::vector<double> scores(numClasses);
+        all.push_back( std::pair<std::vector<double>,int>(
+                        std::vector<double>(numClasses),target_class) );
+        std::vector<double> &scores = all.back().first;
         for (size_t c = 0; c < numClasses; c++ ){
-            scores[c] = *results;
-            ++results;
+            scores[c] = *results++;
         }
         
-        all.push_back(std::pair<std::vector<double>,int>(scores,target_class));
         modified = true;
     }
 
@@ -172,8 +173,8 @@ class MultiROC {
     bool modified;
     double m_;
 
-    MultiROC(const MultiROC&) = delete;
-    MultiROC& operator=(const MultiROC&) = delete;
+    MultiClassROC(const MultiClassROC&) = delete;
+    MultiClassROC& operator=(const MultiClassROC&) = delete;
 
     void calculate_m();
     void process();
@@ -185,4 +186,4 @@ class MultiROC {
 
 }   // end namespace stat
 
-#endif   // STAT_MULTI_ROC_H
+#endif   // STAT_MULTI_CLASS_ROC_H

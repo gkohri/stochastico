@@ -23,7 +23,7 @@
 
 namespace util {
 
-/*
+/**
  * The properties class holds pairs of the type <name,value>, where both 
  * "name" and "value" are strings.
  */
@@ -33,7 +33,7 @@ class Properties {
 
     virtual ~Properties() {}
 
-    /*
+    /**
      * Returns the value associated with the specified name or an empty string
      * if the name is not known.
      * 
@@ -50,10 +50,10 @@ class Properties {
             return std::string();
     }
 
-    /*
-    * Set a name - value pair. If the name already exists, the existing value
-    * is overwritten by the specified value.
-    */
+    /**
+     * Set a name - value pair. If the name already exists, the existing value
+     * is overwritten by the specified value.
+     */
     void set_property(const std::string& name, const std::string& value) {
 
         std::map<std::string, std::string>::iterator it = props.find(name);
@@ -64,12 +64,13 @@ class Properties {
         props[name] = value;
     }
 
-    /*
-    * Checks whether or not the specified name is known to this Properties
-    * instance.
-    */
+    /**
+     * Checks whether or not the specified name is known to this Properties
+     * instance.
+     */
     bool contains_property(const std::string& name) const {
-        std::map<std::string, std::string>::const_iterator it = props.find(name);
+        std::map<std::string, std::string>::const_iterator it = 
+                                                    props.find(name);
 
         if (it != props.end())
             return true;
@@ -77,15 +78,15 @@ class Properties {
             return false;
     }
 
-    /*
-    * Loads properties from the specified file.
-    * 
-    * The file format consits of lines of the form
-    *            name = value
-    * This cannot extend accross multiple lines.
-    * Lines starting with "#" or "!" are ignored as are blank lines. Use quotes
-    * "" to enclose blanks in either the value. 
-    */
+    /**
+     * Loads properties from the specified file.
+     * 
+     * The file format consits of lines of the form
+     *            name = value
+     * This cannot extend accross multiple lines.
+     * Lines starting with "#" or "!" are ignored as are blank lines. Use quotes
+     * "" to enclose blanks in either the value. 
+     */
     void load(const std::string& props_filename);
 
  private:

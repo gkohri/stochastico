@@ -37,13 +37,11 @@ using std::exit;
 using std::string;
 using std::vector;
 
-//==========================================================================
-
-// Friend Functions
-
-//==========================================================================
-
-void get_command_line_options( int argc, char **argv, vector<Option*> &table) {
+/**
+ * A function to read in all the command line arguements
+ */
+void Option::process_all_options(int argc, char **argv, 
+                                 vector<Option*> &table) {
     unsigned op = 0;
     unsigned this_op = 0;
     int found= 0;
@@ -55,7 +53,7 @@ void get_command_line_options( int argc, char **argv, vector<Option*> &table) {
         for ( op = 0 ; op < table.size(); op++)
         {
             c = 0;
-            while ( table[op]->name[c] == argv[arg][c] )
+            while ( table[op]->get_name()[c] == argv[arg][c] )
             {
                 if (argv[arg][++c] == '\0')
                 {
@@ -71,13 +69,13 @@ void get_command_line_options( int argc, char **argv, vector<Option*> &table) {
             fprintf(stderr,"\n\t%s%s\n","Ambiguous argument:  ", argv[arg]);
             usage( argv[0], table );
         } else if (found == 1) {
-            if ( table[this_op]->value_required){
+            if ( table[this_op]->is_value_required() ){
                 if ( arg+1 == argc ) {
                     fprintf(stderr,"\n\t%s%s\n","Argument required! ", 
                             argv[arg]);
                     usage( argv[0], table );
                 }
-                table[this_op]->value = argv[arg+1];
+                table[this_op]->set_value(argv[arg+1]);
                 arg++ ;
             } else {
                 table[this_op]->value = table[this_op]->default_value;
@@ -92,22 +90,21 @@ void get_command_line_options( int argc, char **argv, vector<Option*> &table) {
 };
 
 
-/*
-//            usage of a general program
-//
-*/
-
-void usage( char *program, vector<Option*> &options ) {
+/**
+ * A function to output a usage message.
+ *
+ */
+void Option::usage( char *program, vector<Option*> &options ) {
     fprintf(stderr,"\n\t%s%s%s\n","Usage:  ", program," [option [value] ]"); 
     fprintf(stderr,"\n\n\t%s\n\n","where 'option' is one of:");
 
     for ( unsigned op = 0 ; op < options.size(); op++ )
     {
         if ( options[op]->value_required ){
-            fprintf(stderr,"\t\t%s\t\t%s\n", options[op]->name.c_str(), 
+            fprintf(stderr,"\t\t%s\t\t%s\n", options[op]->get_name().c_str(), 
                     "  Argument"); 
         } else {
-            fprintf(stderr,"\t\t%s\t\t%s\n", options[op]->name.c_str(), 
+            fprintf(stderr,"\t\t%s\t\t%s\n", options[op]->get_name().c_str(), 
                     "  No Argument"); 
         }
     }

@@ -24,15 +24,17 @@
 
 #include <rng/random.h>
 #include <rng/ranmar.h>
-#include <rng/mt19937.h>
+#include <rng/mt_19937.h>
 #include <rng/zran.h>
+#include <rng/well_1024.h>
 #include <stat/accumulator.h>
 #include <util/timer.h>
 #include <util/functions.h>
 
 using rng::Random;
 using rng::Ranmar;
-using rng::MTwist;
+using rng::MT_19937;
+using rng::Well_1024;
 using rng::Zran;
 using stat::Accumulator;
 using util::Timer;
@@ -44,7 +46,7 @@ void sgenrand(unsigned);
 
 void test_ranmar()
 {
-	Random *random = new Ranmar();
+	Random *random = new Ranmar(3127,4591);
 	double avg = 0.0;
 	double avgs = 0.0;
 	double dev = 0.0;
@@ -70,16 +72,16 @@ void test_ranmar()
     }
 }
 
-void test_mtwist()
+void test_MT_19937()
 {
-	MTwist *mtwist = new MTwist();
+	MT_19937 *mt_19937 = new MT_19937();
 	double avg = 0.0;
 	double avgs = 0.0;
 	double dev = 0.0;
 
 	for (int i=0;i<N;i++)
 	{
-        double rand = mtwist->next();
+        double rand = mt_19937->next();
 		avg  += rand;
 		avgs += (rand*rand);
 	}
@@ -92,9 +94,9 @@ void test_mtwist()
 
     if ( ( avg_diff > dev/sqrt(static_cast<double>(N)) ) ||
          ( dev_diff > 1.0/sqrt(static_cast<double>(N)) )   ) {
-        fprintf(stdout,"Test MTwist: \t\t\t [failed]\n");
+        fprintf(stdout,"Test MT_19937: \t\t\t [failed]\n");
     } else {
-        fprintf(stdout,"Test MTwist: \t\t\t [passed]\n");
+        fprintf(stdout,"Test MT_19937: \t\t\t [passed]\n");
     }
 }
 
@@ -123,6 +125,34 @@ void test_zran()
         fprintf(stdout,"Test Zran: \t\t\t [failed]\n");
     } else {
         fprintf(stdout,"Test Zran: \t\t\t [passed]\n");
+    }
+}
+
+void test_Well_1024()
+{
+	Well_1024 *well_1024 = new Well_1024(37813);
+	double avg = 0.0;
+	double avgs = 0.0;
+	double dev = 0.0;
+
+	for (int i=0;i<N;i++)
+	{
+        double rand = well_1024->next();
+		avg  += rand;
+		avgs += (rand*rand);
+	}
+	avg  /= ((double) N);
+	avgs /= ((double) N);
+    dev = sqrt( avgs - avg*avg );
+
+    double avg_diff = fabs(avg - 0.5);
+    double dev_diff = fabs(dev - 1.0/sqrt(12.0));
+
+    if ( ( avg_diff > dev/sqrt(static_cast<double>(N)) ) ||
+         ( dev_diff > 1.0/sqrt(static_cast<double>(N)) )   ) {
+        fprintf(stdout,"Test Well_1024: \t\t [failed]\n");
+    } else {
+        fprintf(stdout,"Test Well_1024: \t\t [passed]\n");
     }
 }
 
@@ -266,13 +296,21 @@ int main(int argc, char * argv[])
 
     fprintf(stdout,"Time for Ranmar: \t\t\t %10.3f  %10.3f \n", real,cpu);
 
-    fprintf(stdout,"Testing MTwist...\n");
+    fprintf(stdout,"Testing MT_19937...\n");
 
     timer.elapsed(real,cpu);
-    test_mtwist();
+    test_MT_19937();
     timer.elapsed(real,cpu);
 
-    fprintf(stdout,"Time for MTwist: \t\t\t %10.3f  %10.3f \n", real,cpu);
+    fprintf(stdout,"Time for MT_19937: \t\t\t %10.3f  %10.3f \n", real,cpu);
+
+    fprintf(stdout,"Testing Well_1024...\n");
+
+    timer.elapsed(real,cpu);
+    test_Well_1024();
+    timer.elapsed(real,cpu);
+
+    fprintf(stdout,"Time for Well_1024: \t\t\t %10.3f  %10.3f \n", real,cpu);
 
     fprintf(stdout,"Testing Zran\n");
 
