@@ -16,6 +16,9 @@
  *      @namespace rng 
  *      @{
  *          @brief Random number generators
+ *          This collection of random number generators contains high
+ *          quality generators which have been validated using the
+ *          open source Dieharder test suite.
  *                 
  *      @}
  *

@@ -44,14 +44,14 @@ void sgenrand(unsigned);
 
 void test_ranmar()
 {
-	Random *random = new Ranmar(3127,4591);
+	Ranmar ranmar(3127,4591);
 	double avg = 0.0;
 	double avgs = 0.0;
 	double dev = 0.0;
 
 	for (int i=0;i<N;i++)
 	{
-        double rand = random->next();
+        double rand = ranmar.next();
 		avg  += rand;
 		avgs += (rand*rand);
 	}

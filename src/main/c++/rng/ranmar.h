@@ -37,6 +37,10 @@ namespace rng {
  *   This implementation was evaluated using version 3.31.0 of the 
  *   Dieharder suite of statistical tests for random number generators 
  *   and successfully passed each test.
+ *   
+ *   Some people have reoported that Ranmar fails one or the other test,
+ *   this is invariably connected with a failure to realize that Ranmar
+ *   is a 24 bit generator, designed for generating single precision numbers.
  */
 class Ranmar: public virtual Random {
  public:
@@ -46,37 +50,25 @@ class Ranmar: public virtual Random {
      *
      * Note: Each pair (seed1,seed2) yields a unique, uncorrelated sequence of
      *       of random numbers.  Given the allowed ranges, this admits
-     *       942,377,568 uncorrelated random sequences.
+     *       942,377,568 uncorrelated random sequences each with a period
+     *       of approximately 10^30.
      *
      * @param seed1 an integer in the range 0<= seed1 <= 31328. If seed1 is 
      *        outside this range it will be wrapped using modular arithmatic
      * @param seed2 an integer in the range 0<= seed2 <= 30081. If seed2 is 
      *        outside this range it will be wrapped using modular arithmatic
      *
-     * @param fib an integer swith for choosing the Fibonacci lags. fib = 0
-     *        uses Fibonacci lags of 97 and 33 yielding a period of
-     *        2^144 (10^43). fib = 1 uses lags of 607 and 273 
-     *        yielding a period of 2^654 (10^196).
-     *   
-     *
      */
-    Ranmar(const int& seed1, const int& seed2, const int& fib = 0):Random() {
-
-        if ( fib == 1 ) {
-            LAG_P = 607;
-            LAG_Q = 273;
-        } else {
-            LAG_P   = 97;
-            LAG_Q   = 33;
-        }
+    Ranmar(const int& seed1, const int& seed2) : Random(),
+              norm(1.0/16777216.0) {
 
         int ij = seed1;
         int kl = seed2;
 
-        const int LAG_PP1 = LAG_P + 1;
+        const size_t LAG_PP1 = LAG_P + 1;
 
-        u = new double[LAG_PP1];
-        for (int ii = 0; ii < LAG_PP1; ii++) {
+        u = new int[LAG_PP1];
+        for (size_t ii = 0; ii < LAG_PP1; ii++) {
             u[ii] = 0.0;
         }
 
@@ -101,26 +93,24 @@ class Ranmar: public virtual Random {
         int k = ((kl/169) % 178) + 1;
         int l = kl % 169;
 
-        for (int ii = 1; ii < LAG_PP1; ++ii) {
-            double s = 0.0;
-            double t = 0.5;
-            for (int jj = 0; jj < 24; ++jj) {
+        for (size_t ii = 1; ii < LAG_PP1; ++ii) {
+            int s = 0;
+            int t = modulus/2;
+            for (size_t jj = 0; jj < 24; ++jj) {
                 int m = (((i*j) % 179)*k) % 179;
                 i = j;
                 j = k;
                 k = m;
                 l = (53*l+1) % 169;
                 if (((l*m) % 64) >= 32) s += t;
-                t *= 0.5;
+                t /= 2;
             }
             u[ii] = s;
         }
 
-        c  =   362436.0/16777216.0;
-        cd = -7654321.0/16777216.0;
-        cm = 16777213.0/16777216.0;
+        c  =   362436;
         ip = LAG_P;
-        iq = LAG_Q;
+        jp = LAG_Q;
     };
 
     virtual ~Ranmar() {
@@ -128,28 +118,13 @@ class Ranmar: public virtual Random {
     }
 
     /**
-     * Generate a random number uniformly in the range [0.0,1.0]
+     * Generate a random number uniformly in the range [0.0,1.0].
+     * 
+     * Note: This is actually a single precision random number, i.e.,
+     *       only the first 24 bits of the mantissa are significant.
      */
     double next() {
-
-        double uni = u[ip] - u[iq];
-
-        if (uni < 0.0) uni += 1.0;
-        u[ip] = uni;
-
-        --ip;
-        if ( ip == 0 ) ip = LAG_P;
-
-        --iq;
-        if ( iq == 0 ) iq = LAG_P;
-
-        c += cd;
-        if ( c < 0.0 ) c += cm;
-
-        uni -= c;
-        if ( uni < 0.0 ) uni += 1.0;
-
-        return( uni );
+        return ( static_cast<double>(next_24bit())*norm);
     }
 
     /**
@@ -163,27 +138,53 @@ class Ranmar: public virtual Random {
 
     /**
      * Generate a random, unsigned integer uniformly in the range [0,2^32-1]
+     * 
      */
     unsigned next_uint() {
-        unsigned int r1 = (unsigned int) (next()*16777215.0);
-        unsigned int r2 = (unsigned int) (next()*16777215.0);
+        int r1 = next_24bit();
+        int r2 = next_24bit();
         
-        return ( r1 | (r2 << 24 ) );
+        return static_cast<unsigned>( r1 | (r2 << 24 ) );
     }
 
  private:
-    int LAG_P;
-    int LAG_Q;
+    static const int    modulus = 16777216;
+    static const int    cd      = -7654321;
+    static const int    cm      = 16777213 ;
+    static const size_t LAG_P   = 97;
+    static const size_t LAG_Q   = 33;
+    size_t ip;
+    size_t jp;
+    int c;
 
-    int ip; 
-    int iq;
-    double c;
-    double cd;
-    double cm;
-    double *u;
+    const double norm;
+
+    int *u;
 
     Ranmar(const Ranmar&);
     Ranmar& operator=(const Ranmar&);
+
+    inline int next_24bit() {
+
+        int uni = u[ip] - u[jp];
+
+        if ( uni < 0 ) uni += modulus;
+        u[ip] = uni;
+
+        --ip;
+        if ( ip == 0 ) ip = LAG_P;
+
+        --jp;
+        if ( jp == 0 ) jp = LAG_P;
+
+        c += cd;
+        if ( c < 0 ) c += cm;
+
+        uni -= c;
+        if ( uni < 0 ) uni += modulus;
+
+        return( uni );
+    }
 };
 
 }  // namespace rng
