@@ -141,6 +141,9 @@ class MT_19937: public virtual Random {
 
     /**
      * Generate the next random number in the closed interval [0,1].
+     * 
+     * Note: This is a 32 bit random number generator, hence only the
+     *       first 32 bits of the mantissa are significant.
      */
     double next() {
         return ( static_cast<double>(next_uint())*(1.0/4294967295.0) );
@@ -148,6 +151,7 @@ class MT_19937: public virtual Random {
 
     /**
      * Generate the next random number in the open interval (0,1)
+     * 
      */
     double next_open() {
         return ( (next() + 0.5)*(1.0/4294967296.0) );

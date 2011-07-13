@@ -61,6 +61,9 @@ class Well_1024: public virtual Random {
 
     /**
      * Generate a random number uniformly in the range [0.0,1.0]
+     * 
+     * Note: This is a 32 bit random number generator, hence only the first
+     *       32 bits of the mantissa are significant.
      */
     double next() {
         z0 = state[(state_i+31) & 31] ;
