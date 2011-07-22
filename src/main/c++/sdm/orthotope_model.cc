@@ -18,6 +18,7 @@
 #include "sdm/orthotope_model.h"
 
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <set>
 #include <vector>
@@ -59,7 +60,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double nn_coordinate = nn_reals[r];
         if ( isnan( coordinate ) || isnan( nn_coordinate ) ) continue;
 
-        double nn_diff = nn_coordinate - coordinate;
+        double nn_diff = (nn_coordinate - coordinate)*1.001;
 
         region.get_real_boundaries( r, lower, upper );
 
@@ -93,7 +94,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
 
         double nn_diff = 0.0;
         if ( nn_intervals != 0 && !isnan( nn_intervals[i] ) )
-            nn_diff = nn_intervals[i] - coordinate;
+            nn_diff = (nn_intervals[i] - coordinate)*1.001;
 
         region.get_interval_boundaries( i, lower, upper );
 
@@ -133,23 +134,43 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double nn_coordinate = nn_ordinals[o];
         if ( coordinate == -1  || nn_coordinate == -1) continue;
 
-        double nn_diff = nn_coordinate - coordinate;
+        double nn_diff = (nn_coordinate - coordinate)*1.001;
 
         region.get_ordinal_boundaries( o, lower, upper );
 
         double radius = (upper - lower)/2.0;
 
+        double zu = radius*(lp + (up-lp)*rand->next());
+        //double zu = 0.15;
+        double rectUpper = coordinate + zu;
+        if ( nn_diff > 0.0 ) rectUpper += nn_diff;
+/*
         double rectUpper = coordinate;
         if ( rand->next() < up ) rectUpper += radius;
         if ( nn_diff > 0.0 ) rectUpper += nn_diff;
+*/
 
         if ( rectUpper > upper ) rectUpper = upper;
 
+/*
         double rectLower = coordinate;
         if ( rand->next() < up ) rectLower -= radius;
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
+*/
+
+        double zl = radius*(lp + (up-lp)*rand->next());
+        //double zl = 0.15;
+        double rectLower = coordinate - zl;
+        if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
         if ( rectLower < lower ) rectLower = lower;
+
+/*
+        if ( (nn_coordinate > rectUpper) || (nn_coordinate < rectLower) ) {
+            fprintf(stderr,"nn not in boundary!  %20.13e  %20.13e  %20.13e\n",
+                    nn_coordinate, rectUpper, rectLower);
+        }
+*/
 
         orthotope->set_ordinal_boundaries( o, rectLower, rectUpper );
     }

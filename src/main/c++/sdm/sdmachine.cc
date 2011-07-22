@@ -241,6 +241,8 @@ void SDMachine::folded_learning( DataManager &dataManager ) {
                        "sensitivity: ", result->avg_sensitivity(),
                        "fdr: ", result->avg_false_discovery_rate(),
                        "m: ", result->m() );
+
+        delete result;
     }
 
     fprintf(stdout,
@@ -335,9 +337,13 @@ MultiClassROC* SDMachine::test( DataStore &test_data ) {
     vector<Discriminator*>::const_iterator dit;
     DataStore::const_iterator pit;
 
-    MultiClassROC *roc = new MultiClassROC( discriminators.size() );
+    MultiClassROC *roc;
+    if (discriminators.size() == 1) {
+        roc = new MultiClassROC( discriminators.size() + 1);
+    } else {
+        roc = new MultiClassROC( discriminators.size() );
+    }
 
-    double best = 1.0;
     int real_color = 0;
     int predicted_color = 0;
 
@@ -366,9 +372,14 @@ MultiClassROC* SDMachine::test( DataStore &test_data ) {
     }
 
     for (unsigned td = 0; td < num_tests; ++td) {
-        best = threshold;
-        real_color = test_data[td]->get_color();
         predicted_color = 0;
+        real_color = test_data[td]->get_color();
+        if (discriminators.size() == 1) {
+            double ds1[2];
+            ds1[real_color] = prediction[td][0];
+            ds1[real_color^1] = threshold;
+            roc->record_results(real_color, ds1);
+        }
 
         roc->record_results(real_color, prediction[td]);
     }

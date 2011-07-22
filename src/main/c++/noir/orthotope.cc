@@ -18,6 +18,7 @@
 #include "noir/orthotope.h"
 
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <set>
 
@@ -32,51 +33,66 @@ Orthotope::Orthotope( const NoirSpace *noir_space ):
                             real_boundaries(0),
                             allowed_nominals(0) {
 
-    allowed_nominals = new set<int>[noirSpace->nominal];
-    for ( int n = 0; n < noirSpace->nominal; ++n ) {
-        allowed_nominals[n].clear();
+    if ( noirSpace->nominal > 0 ) {
+        allowed_nominals = new set<int>[noirSpace->nominal];
+        for ( int n = 0; n < noirSpace->nominal; ++n ) {
+            allowed_nominals[n].clear();
+        }
     }
 
-    ordinal_boundaries = new double*[noirSpace->ordinal];
-    for ( int o = 0; o < noirSpace->ordinal; ++o ) {
-        ordinal_boundaries[o] = new double[2];
-        ordinal_boundaries[o][0] = -std::numeric_limits<double>::max();
-        ordinal_boundaries[o][1] =  std::numeric_limits<double>::max();
+    if ( noirSpace->ordinal > 0 ) {
+        ordinal_boundaries = new double*[noirSpace->ordinal];
+        for ( int o = 0; o < noirSpace->ordinal; ++o ) {
+            ordinal_boundaries[o] = new double[2];
+            ordinal_boundaries[o][0] = -1.0;
+            ordinal_boundaries[o][1] =  1.0;
+        }
     }
 
-    interval_boundaries = new double*[noirSpace->interval];
-    for ( int i = 0; i < noirSpace->interval; ++i ) {
-        interval_boundaries[i] = new double[2];
-        interval_boundaries[i][0] = -std::numeric_limits<double>::max();
-        interval_boundaries[i][1] =  std::numeric_limits<double>::max();
+    if ( noirSpace->interval > 0 ) {
+        interval_boundaries = new double*[noirSpace->interval];
+        for ( int i = 0; i < noirSpace->interval; ++i ) {
+            interval_boundaries[i] = new double[2];
+            interval_boundaries[i][0] = -1.0;
+            interval_boundaries[i][1] =  1.0;
+        }
     }
 
 
-    real_boundaries = new double*[noirSpace->real];
-    for ( int r = 0; r < noirSpace->real; ++r ) {
-        real_boundaries[r] = new double[2];
-        real_boundaries[r][0] = -std::numeric_limits<double>::max();
-        real_boundaries[r][1] =  std::numeric_limits<double>::max();
+    if ( noirSpace->real > 0 ) {
+        real_boundaries = new double*[noirSpace->real];
+        for ( int r = 0; r < noirSpace->real; ++r ) {
+            real_boundaries[r] = new double[2];
+            real_boundaries[r][0] = -1.0;
+            real_boundaries[r][1] =  1.0;
+        }
     }
 }
 
 Orthotope::~Orthotope() {
-    delete[] allowed_nominals;
 
-    for ( int o = 0; o < noirSpace->ordinal; o++ ) {
-        delete[] ordinal_boundaries[o];
-    }
-    delete[] ordinal_boundaries;
+    if ( allowed_nominals != 0 ) delete[] allowed_nominals;
 
-    for ( int i = 0; i < noirSpace->interval; i++ ) {
-        delete[] interval_boundaries[i];
+    if ( real_boundaries != 0 ) {
+        for ( int r = 0; r < noirSpace->real; ++r ) {
+            delete[] real_boundaries[r];
+        }
+        delete[] real_boundaries;
     }
-    delete[] interval_boundaries;
 
-    for ( int r = 0; r < noirSpace->real; r++ ) {
-        delete[] real_boundaries[r];
+    if ( interval_boundaries != 0 ) {
+        for ( int i = 0; i < noirSpace->interval; ++i ) {
+            delete[] interval_boundaries[i];
+        }
+        delete[] interval_boundaries;
     }
-    delete[] real_boundaries;
+
+    if ( ordinal_boundaries != 0 ) {
+        for ( int o = 0; o < noirSpace->ordinal; ++o ) {
+            delete[] ordinal_boundaries[o];
+        }
+        delete[] ordinal_boundaries;
+    }
 }
 
 bool Orthotope::in_closure( const Point *point ) const {
@@ -124,7 +140,7 @@ bool Orthotope::in_closure( const Point *point ) const {
 
     const double* ordinals = point->get_ordinal_coordinates();
     for ( int o = 0; o < noirSpace->ordinal; ++o ) {
-        if ( ordinals[o] == -1) continue;
+        if ( ordinals[o] < -0.5) continue;
         if ( ordinals[o] < ordinal_boundaries[o][0] ||
              ordinals[o] > ordinal_boundaries[o][1]   ) {
             in_closure = false;

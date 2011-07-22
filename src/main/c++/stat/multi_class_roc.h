@@ -40,9 +40,9 @@ class MultiClassROC {
  * Create a new instance capable of handling the specified number of classes.
  */
     explicit MultiClassROC(const int &num_classes) : numClasses(num_classes),
-                   all(), correct(num_classes), 
-                   wrong(num_classes), examples(num_classes), 
-                   fp(num_classes),
+                   all(), correct(num_classes,0), 
+                   wrong(num_classes,0), examples(num_classes,0), 
+                   fp(num_classes,0),
                    modified(0), m_(0) {}
 
 

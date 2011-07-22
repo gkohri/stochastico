@@ -49,6 +49,7 @@ class Discriminator {
     virtual ~Discriminator(){
         clear();
         delete modelFactory;
+        delete rand;
     }
 
     /*

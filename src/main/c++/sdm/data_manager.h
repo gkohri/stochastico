@@ -27,6 +27,7 @@
 #include "sdm/data_store.h"
 #include "sdm/model.h"
 #include "sdm/nominal_scale.h"
+#include "sdm/ordinal_scale.h"
 #include "sdm/training_data.h"
 #include "util/misc.h"
 #include "util/properties.h"
@@ -150,13 +151,16 @@ class DataManager {
     std::vector<int> intervalFields;
     std::vector<int> realFields;
     std::vector<NominalScale*> nominalValues;
-    std::vector<NominalScale*> ordinalValues;
+    std::vector<OrdinalScale*> ordinalValues;
     std::vector<double> intervalPeriods;
     size_t numFields;
     int idField;
     int colorField;
 
-    void load_data( const std::string &filename, DataStore &dataStore );
+    double **real_min_max;
+
+    void load_data( const std::string &filename, DataStore &dataStore, 
+                    bool is_training_data );
 
     template<typename ValueType>
     inline int parse_single_value(const util::Properties &parameters,

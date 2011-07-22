@@ -77,11 +77,11 @@ void Discriminator::create_models_rc( const int &num_models,
     numBroken = 0;
 
     double avg_cov = 0.0;
+    double norm = 1.0;
     for ( int m = 0; m < num_models; m++ ){
         double lpf = lowerFrac;
         double upf = upperFrac;
 
-        double norm = 1.0;
         if ( models.size() > 0 ) {
             norm = 1.0/static_cast<double>(models.size());
         }
@@ -98,14 +98,8 @@ void Discriminator::create_models_rc( const int &num_models,
             CoveredPoint *nn = trainingData.get_nn(nexus);
             model->expand( *boundary, nexus, nn, rand, lpf, upf );
 
-            if ( nexus == 0) {
-                fprintf(stderr,"nexus does not exist!\n");
-            }
             if ( !(model->covers(nexus)) ) {
                 fprintf(stderr,"nexus not covered!\n");
-            }
-            if ( nn == 0) {
-                fprintf(stderr,"neighbor does not exist!\n");
             }
             if ( !(model->covers(nn)) ) {
                 double dist = nexus->get_data_point()->noirSpace->norm(
@@ -135,16 +129,15 @@ void Discriminator::create_models_rc( const int &num_models,
                         static_cast<double>(model->get_num_other_color());
 
             //If we have to many points in the model, then break and start over
-
+            if ( model_pc == numPrincipalColor ) {
 /*
-            fprintf(stderr,"c: %d t:  %d  ns:  %d total: %f  %f  %f %f %f \n",
+                double model_total = model_pc + model_oc;
+                fprintf(stderr,
+                    "c: %d t:  %d  ns:  %d total: %f  %f  %f %f %f \n",
                 principalColor, t, model->get_num_elements(),
                 model_total, numPrincipalColor,numOtherColor,
                     avg_mod_cov, avg_cov);
 */
-
-
-            if ( model_pc == numPrincipalColor ) {
                 ++numBroken;
                 break;
             }
@@ -233,7 +226,7 @@ void Discriminator::create_models_lc( const int &num_models,
 
         //Generate a random model
         Model *model = modelFactory->get_model(principalColor, 
-                                               numPrincipalColor, numOtherColor);
+                                             numPrincipalColor, numOtherColor);
 
         //Make max_attempts to find a new model
         int t;
@@ -330,8 +323,10 @@ void Discriminator::create_models_lc( const int &num_models,
             }
 
             // make the next space a bit bigger
-            upf *= 1.10;
-            lpf *= 1.10;
+            if ( t < 10 ) {
+                upf *= 1.10;
+                lpf *= 1.10;
+            }
 
             // make the last space a bit thicker
             model->thicken( *boundary, rand, 0.8);
@@ -345,6 +340,9 @@ void Discriminator::create_models_lc( const int &num_models,
                 ++numUnfinished;
             }
             ++rank;
+            if ( rank == numPrincipalColor ) {
+                rank = 0;
+            }
         }
     }
 
@@ -368,8 +366,30 @@ void Discriminator::training_data_prob_distribution(){
         }
     }
 
-    fprintf(stdout, 
-   "%s %d\n%s %d\n%s  %d\n%s %d\n%s %d\n%s %10.3e  %s %10.3e\n%s %10.3e  %s %10.3e\n\n", 
+    Accumulator pc_cover;
+    Accumulator oc_cover;
+    Accumulator subspaces;
+    unsigned num_models = models.size();
+    for (unsigned m = 0; m < num_models; ++m){
+        double avg_mod_pc_cover = 0.0;
+        double avg_mod_oc_cover = 0.0;
+        for ( pit = trainingData.begin(); 
+                pit < trainingData.end(); ++pit ){
+            if ( models[m]->covers(*pit) ) {
+                if ( (*pit)->get_color() == principalColor ) {
+                    ++avg_mod_pc_cover;
+                } else {
+                    ++avg_mod_oc_cover;
+                }
+            }
+        }
+        pc_cover.gather(avg_mod_pc_cover);
+        oc_cover.gather(avg_mod_oc_cover);
+        subspaces.gather(models[m]->get_num_elements());
+    }
+
+    fprintf(stdout, "%s  %d\n%s %d\n%s %d\n%s  %d\n%s %d\n%s %d\n%s %10.3e  %s %10.3e\n%s  %10.3e  %s %10.3e\n%s %10.3e\n%s  %10.3e\n%s  %10.3e\n\n", 
+                   "principal color:", principalColor,
                    "number of models:", static_cast<int>(models.size()),
                    "number exceeded:", numUnfinished,
                    "number broken:", numBroken,
@@ -378,7 +398,10 @@ void Discriminator::training_data_prob_distribution(){
                    "avg Y_PC: ", apc.mean(),
                    "deviation: ", apc.deviation_population(),
                    "avg Y_OC: ", aoc.mean(),
-                   "deviation: ", aoc.deviation_population() );
+                   "deviation: ", aoc.deviation_population(),
+                   "avg. PC covered per model: ", pc_cover.mean(),
+                   "avg. OC covered per model: ", oc_cover.mean(),
+                   "avg. num. subspaces per model: ", subspaces.mean() );
 
 };
 
@@ -391,7 +414,10 @@ double Discriminator::test( const DataPoint* point ){
     for (unsigned m = 0; m < num_models; ++m){
         prediction += models[m]->characteristic( point );
     }
-    prediction /= static_cast<double>(num_models);
+
+    if ( num_models > 0 ) {
+        prediction /= static_cast<double>(num_models);
+    }
 
     return prediction;
 }
