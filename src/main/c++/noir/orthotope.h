@@ -26,7 +26,7 @@
 
 namespace noir {
 
-/*
+/**
  * A Orthotope is a Cartesian product of two or more intervals. In Noir space
  * these intervals are very general, consiting of Nominal, Ordinal, periodic
  * and real values.
@@ -34,28 +34,28 @@ namespace noir {
  */
 class Orthotope : public ClosedSpace {
  public:
-    // The space in which this orthotope lives
+    /// The space in which this orthotope lives
     NoirSpace const * const noirSpace;
     
     explicit Orthotope(const NoirSpace *noirSpace);
 
     virtual ~Orthotope();
 
-    /*
+    /**
      * Adds a nominal value to the set of values for the specified coordinate.
      */
     void add_nominal(const int &coordinate, const int &nominal_value) {
         allowed_nominals[coordinate].insert(nominal_value);
     }
 
-    /*
+    /**
      * Retrieves the set of nominal values for the specified coordinate
      */
     const std::set<int>& get_nominals(const int &coordinate) const {
         return allowed_nominals[coordinate];
     }
 
-    /*
+    /**
      * Set lower and upper boundaries for the specified ordinal coordinate.
      */
     void set_ordinal_boundaries(const int &coordinate, double lower, 
@@ -64,7 +64,7 @@ class Orthotope : public ClosedSpace {
         ordinal_boundaries[coordinate][1] = upper;
     }
 
-    /*
+    /**
      * Retrieves the boundaries for the specified ordinal coordinate
      */
     void get_ordinal_boundaries(const int &coordinate, 
@@ -73,7 +73,7 @@ class Orthotope : public ClosedSpace {
         upper = ordinal_boundaries[coordinate][1];
     }
 
-    /*
+    /**
      * Set lower and upper boundaries for the specified interval coordinate.
      */
     void set_interval_boundaries(const int &coordinate, 
@@ -82,7 +82,7 @@ class Orthotope : public ClosedSpace {
         interval_boundaries[coordinate][1] = upper;
     }
 
-    /*
+    /**
      * Retrieves the boundaries for the specified interval coordinate
      */
     void get_interval_boundaries(const int &coordinate, 
@@ -91,7 +91,7 @@ class Orthotope : public ClosedSpace {
         upper = interval_boundaries[coordinate][1];
     }
 
-    /*
+    /**
      * Set lower and upper boundaries for the specified real coordinate.
      */
     void set_real_boundaries(const int &coordinate, double lower, double upper){
@@ -99,7 +99,7 @@ class Orthotope : public ClosedSpace {
         real_boundaries[coordinate][1] = upper;
     }
 
-    /*
+    /**
      * Retrieves the boundaries for the specified real coordinate
      */
     void get_real_boundaries(const int &coordinate, 
@@ -108,7 +108,7 @@ class Orthotope : public ClosedSpace {
         upper = real_boundaries[coordinate][1];
     }
 
-    /*
+    /**
      * Determines whether or the not the specified point is contained within
      * the closure of this Noir space.
      */

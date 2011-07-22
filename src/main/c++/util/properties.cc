@@ -83,6 +83,8 @@ void Properties::load( const string& props_filename ) {
                 string msg = "Invalid file. Line contains no separator: " +
                                                 natural;
                 free(line);
+                line = NULL;
+                len = 0;
                 throw InvalidInputError( __FILE__, __LINE__, msg );
             }
 
@@ -92,6 +94,8 @@ void Properties::load( const string& props_filename ) {
             if ( key.empty() ) {
                 string msg = "Invalid file. Empty key! ";
                 free(line);
+                line = NULL;
+                len = 0;
                 throw InvalidInputError( __FILE__, __LINE__, msg );
             }
 
@@ -106,6 +110,8 @@ void Properties::load( const string& props_filename ) {
             line = NULL;
             len = 0;
     }
+
+    if ( line != NULL ) free(line);
 
     fclose(file);
 };

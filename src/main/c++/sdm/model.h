@@ -41,8 +41,10 @@ class Model {
 
     virtual ~Model(){
         std::vector<noir::ClosedSpace*>::iterator hit;
-        for ( hit = spaces.begin(); hit != spaces.end(); ++hit ){
-            delete (*hit);
+        if ( spaces.size() > 0 ) {
+            for ( hit = spaces.begin(); hit != spaces.end(); ++hit ){
+                delete (*hit);
+            }
         }
     }
 

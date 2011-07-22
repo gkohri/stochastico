@@ -40,7 +40,7 @@ class NominalScale {
     }
 
     /*
-     * Checks wether the specified label is known.
+     * Checks whether the specified label is known.
      */
     bool is_known( const std::string &label ) {
         if ( label_map.find( label ) != label_map.end() )  {
@@ -51,7 +51,7 @@ class NominalScale {
     }
 
     /*
-     * Checks wether the specified index is in use.
+     * Checks whether the specified index is in use.
      */
     bool is_known( const int &index ) {
         if ( index > -1 && index < static_cast<int>(size()) ) {

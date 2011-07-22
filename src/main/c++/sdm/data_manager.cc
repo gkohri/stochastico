@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <iterator>
 #include <limits>
 #include <set>
@@ -29,9 +30,15 @@
 #include "noir/orthotope.h"
 #include "rng/random.h"
 #include "sdm/data_point.h"
-#include "util/functions.h"
+#include "sdm/data_store.h"
+#include "sdm/model.h"
+#include "sdm/nominal_scale.h"
+#include "sdm/ordinal_scale.h"
+#include "sdm/training_data.h"
 #include "util/csv.h"
+#include "util/functions.h"
 #include "util/invalid_input_error.h"
+#include "util/misc.h"
 #include "util/properties.h"
 
 namespace sdm {
@@ -53,15 +60,34 @@ using util::Properties;
 
 DataManager::~DataManager(){
     if ( folds.size() > 1 ) {
-        for ( unsigned f = 0; f < folds.size(); f++ ) {
+        for ( unsigned f = 0; f < folds.size(); ++f ) {
             delete folds[f];
         }
     }
-    for ( unsigned n = 0; n < nominalValues.size(); n++ ) {
+    for ( unsigned n = 0; n < nominalValues.size(); ++n ) {
         delete nominalValues[n];
     }
+    for ( unsigned o = 0; o < ordinalValues.size(); ++o ) {
+        delete ordinalValues[o];
+    }
+    for ( int c = 0; c < noirSpace->real; ++c ) {
+        delete[] real_min_max[c];
+    }
+    delete[] real_min_max;
+
+    for ( size_t d = 0; d < trainingData.size(); ++d ) {
+        delete trainingData[d];
+    }
+    for ( size_t d = 0; d < testData.size(); ++d ) {
+        delete testData[d];
+    }
+    for ( size_t d = 0; d < trialData.size(); ++d ) {
+        delete trialData[d];
+    }
+
     delete enclosure;
     delete noirSpace;
+
 }
 
 void DataManager::init( const Properties &parameters ) {
@@ -190,18 +216,29 @@ void DataManager::read_ordinal_values(const Properties &parameters) {
         int fieldID = ordinalFields[of];
         string value_prop = "Data::Fields::Ordinal::" + to_string(fieldID);
         if ( parameters.contains_property(value_prop) ) {
+
+            OrdinalScale *os = new OrdinalScale();
+
             string value_str = parameters.get_property(value_prop);
 
-            vector<string> values;
-            tokenize( value_str, values, "," );
 
-            NominalScale *ns = new NominalScale();
+            if ( value_str.compare(Ordering::Lexicographic.c_str()) == 0 ) {
+                os->set_ordering( Ordering::Lexicographic );
+            } else if ( value_str.compare(Ordering::ClassCorrelation.c_str()) 
+                        == 0 ) {
+                os->set_ordering( Ordering::ClassCorrelation );
+            } else {
+                os->set_ordering( Ordering::UserDefined );
+                vector<string> values;
+                tokenize( value_str, values, "," );
 
-            for( unsigned v = 0; v < values.size(); ++v ) {
-                ns->mark( trim(values[v]) );
+
+                for( unsigned v = 0; v < values.size(); ++v ) {
+                    os->set_value( trim(values[v] ) );
+                }
             }
 
-            ordinalValues.push_back(ns);
+            ordinalValues.push_back(os);
         } else {
             string msg = "'" + value_prop + "' not found in parameters file!";
             throw util::InvalidInputError(__FILE__,__LINE__, msg );
@@ -228,19 +265,20 @@ void DataManager::read_interval_periods(const Properties &parameters) {
 }
 
 void DataManager::load_training_data( const string &filename ) {
-    load_data( filename, trainingData );
+    load_data( filename, trainingData, true );
 }
 
 void DataManager::load_test_data( const string &filename ) {
-    if ( !filename.empty() ) load_data( filename, testData );
+    if ( !filename.empty() ) load_data( filename, testData, false );
 }
 
 void DataManager::load_trial_data( const string &filename ) {
-    if ( !filename.empty() ) load_data( filename, trialData );
+    if ( !filename.empty() ) load_data( filename, trialData, false );
 }
 
 
-void DataManager::load_data( const string &filename, DataStore &dataStore ) {
+void DataManager::load_data( const string &filename, DataStore &dataStore,
+                             bool is_training_data ) {
 
     CSVReader csvReader( filename );
 
@@ -253,20 +291,22 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
     int interval_dimensions = intervalFields.size();
     int real_dimensions = realFields.size();
 
-    for ( int n = 0; n < nominal_dimensions; n++ ) {
-        NominalScale *ns = new NominalScale();
-        nominalValues.push_back(ns);
-    }
+    if ( is_training_data ) {
+        for ( int n = 0; n < nominal_dimensions; n++ ) {
+            NominalScale *ns = new NominalScale();
+            nominalValues.push_back(ns);
+        }
 
-    double **real_min_max = new double*[real_dimensions];
-    for ( int r = 0; r < real_dimensions; r++ ) {
-        real_min_max[r] = new double[2];
-        real_min_max[r][0] =  numeric_limits<double>::max();
-        real_min_max[r][1] = -numeric_limits<double>::max();
-    }
+        real_min_max = new double*[real_dimensions];
+        for ( int r = 0; r < real_dimensions; r++ ) {
+            real_min_max[r] = new double[2];
+            real_min_max[r][0] =  numeric_limits<double>::max();
+            real_min_max[r][1] = -numeric_limits<double>::max();
+        }
 
-    noirSpace = new NoirSpace( nominal_dimensions, ordinal_dimensions,
+        noirSpace = new NoirSpace( nominal_dimensions, ordinal_dimensions,
                                interval_dimensions, real_dimensions );
+    }
 
     int id = 0;
     double value = 0.0;
@@ -318,15 +358,19 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
         for ( int o = 0; o < ordinal_dimensions; ++o ) {
             string value_str = trim( fields[ordinalFields[o]] );
 
-            if ( value_str.empty()             ||
-                 value_str.compare( "?" ) == 0 ||
-                 value_str.compare( "*" ) == 0    ) {
-                ordinalValues[o]->mark( value_str );
+            double value;
+            if ( is_training_data ) {
+                if ( value_str.empty()            ||
+                    value_str.compare( "?" ) == 0 ||
+                    value_str.compare( "*" ) == 0    ) {
+                    ordinalValues[o]->set_value( value_str );
+                }
+                value = ordinalValues[o]->mark( value_str, color );
+            } else {
+                value = ordinalValues[o]->transcribe( value_str );
             }
 
-            int value = ordinalValues[o]->transcribe( value_str );
-
-            point->set_ordinal_coordinate( o, static_cast<double>(value) );
+            point->set_ordinal_coordinate( o, value );
         }
 
         // Get the interval valued features
@@ -335,7 +379,7 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             if ( value_str.empty()             ||
                  value_str.compare( "?" ) == 0 ||
                  value_str.compare( "*" ) == 0    ) {
-                value = numeric_limits<double>::quiet_NaN();
+                value = intervalPeriods[i];
             } else {
                 to_numeric( value_str, value );
             }
@@ -356,7 +400,8 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             if ( value_str.empty()             ||
                  value_str.compare( "?" ) == 0 ||
                  value_str.compare( "*" ) == 0    ) {
-                value = numeric_limits<double>::quiet_NaN();
+                //value = numeric_limits<double>::quiet_NaN();
+                value = -1.0;
             } else {
                 to_numeric( value_str, value );
             }
@@ -418,6 +463,12 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
 
     // Normalize the data. The interval dimensions are already normalized.
 
+    if ( is_training_data ) {
+        for ( int o = 0; o < noirSpace->ordinal; o++ ) {
+            ordinalValues[o]->apply_ordering();
+        }
+    }
+    
     DataStore::iterator dit;
     for (dit = dataStore.begin(); dit != dataStore.end(); ++dit) {
         DataPoint *dataPoint = *dit;
@@ -428,19 +479,16 @@ void DataManager::load_data( const string &filename, DataStore &dataStore ) {
             rc /= (max - min);
             dataPoint ->set_real_coordinate(r, rc);
         }
-        for ( int o = 0; o < noirSpace->ordinal; o++ ) {
-            double oc = dataPoint->get_ordinal_coordinate(o);
-            oc /= static_cast<double>(ordinalValues[o]->size());
-            dataPoint ->set_ordinal_coordinate(o, oc);
+
+        if ( is_training_data ) {
+            for ( int o = 0; o < noirSpace->ordinal; o++ ) {
+                double oc = ordinalValues[o]->transcribe(
+                                dataPoint->get_ordinal_coordinate(o) );
+                dataPoint ->set_ordinal_coordinate(o, oc);
+            }
         }
     }
 
-
-    // clean up our temporary storage
-    for ( int c = 0; c < noirSpace->real; c++ ) {
-        delete[] real_min_max[c];
-    }
-    delete[] real_min_max;
 };
 
 void DataManager::partition_training_data( const int &num_folds,
