@@ -53,7 +53,7 @@
 #ifndef RNG_MT_19937_H
 #define RNG_MT_19937_H
 
-#include <math.h>
+#include <tgmath.h>
 #include <limits.h>
 #include <assert.h>
 
@@ -79,7 +79,8 @@ class MT_19937: public virtual Random {
                                         M(397),
                                         MATRIX_A(0x9908b0dfUL),
                                         UPPER_MASK(0x80000000UL),
-                                        LOWER_MASK(0x7fffffffUL) {
+                                        LOWER_MASK(0x7fffffffUL),
+                                        norm(1.0/4294967295.0){
         mti = N+1;
 
         mt    = new unsigned[N];
@@ -142,19 +143,17 @@ class MT_19937: public virtual Random {
     /**
      * Generate the next random number in the closed interval [0,1].
      * 
-     * Note: This is a 32 bit random number generator, hence only the
-     *       first 32 bits of the mantissa are significant.
      */
-    double next() {
-        return ( static_cast<double>(next_uint())*(1.0/4294967295.0) );
+    float next() {
+        return ( static_cast<float>(next_uint())*norm );
     }
 
     /**
      * Generate the next random number in the open interval (0,1)
      * 
      */
-    double next_open() {
-        return ( (next() + 0.5)*(1.0/4294967296.0) );
+    float next_open() {
+        return ( (next() + 0.5)*norm );
     }
 
 
@@ -252,6 +251,8 @@ class MT_19937: public virtual Random {
 
     int       mti;         // mti==N+1 means mt[N] is not initialized
     unsigned *mt;            // the array for the state vector
+
+    const float norm;
 
     MT_19937(const MT_19937&);
     MT_19937& operator=(const MT_19937&);

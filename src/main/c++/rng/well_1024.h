@@ -42,7 +42,7 @@ class Well_1024: public virtual Random {
      *
      */
     explicit Well_1024(const unsigned int& seed): Random(), 
-                    z0(0), z1(0), z2(0), state_i(0) {
+                    z0(0), z1(0), z2(0), state_i(0), norm(1.0/4294967295.0) {
 
     // Initialize the internal state using a simple, poor quality rng.
         unsigned un = seed;
@@ -62,10 +62,8 @@ class Well_1024: public virtual Random {
     /**
      * Generate a random number uniformly in the range [0.0,1.0]
      * 
-     * Note: This is a 32 bit random number generator, hence only the first
-     *       32 bits of the mantissa are significant.
      */
-    double next() {
+    float next() {
         z0 = state[(state_i+31) & 31] ;
         z1 = (state[state_i]) ^ m3_pos(8, state[(state_i + 3) & 31]);
         z2 = m3_neg(19, state[(state_i + 24) & 31]) ^ 
@@ -74,16 +72,18 @@ class Well_1024: public virtual Random {
         state[(state_i+31) & 31] = 
                 m3_neg(11,z0) ^ m3_neg(7,z1) ^ m3_neg(13,z2) ;
         state_i = (state_i + 31) & 31;
-        return ((double) state[state_i] * 2.32830643653869628906e-10);
+        return (static_cast<float>(state[state_i]) * norm );
     }
 
     /**
      * Generate a random integer uniformly in the range:
      *          [0,n-1] if n>0, or
      *          [n+1,0] if n<0
+     *
+     * Note: |n| < 2^32 
      */
     int next_int(const int &n) {
-        return static_cast<int>( static_cast<double>(n)*next() );
+        return static_cast<int>( static_cast<float>(n)*next() );
     }
 
     /**
@@ -100,6 +100,8 @@ class Well_1024: public virtual Random {
     unsigned int z2;
     unsigned int state_i;
     unsigned int state[R];
+
+    const float norm;
 
     Well_1024(const Well_1024&);
     Well_1024& operator=(const Well_1024&);

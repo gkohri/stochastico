@@ -123,17 +123,19 @@ class Ranmar: public virtual Random {
      * Note: This is actually a single precision random number, i.e.,
      *       only the first 24 bits of the mantissa are significant.
      */
-    double next() {
-        return ( static_cast<double>(next_24bit())*norm);
+    float next() {
+        return ( static_cast<float>(next_24bit())*norm);
     }
 
     /**
      * Generate the a random integer uniformly in the range:
      *          [0,n-1] if n>0, or
      *          [n+1,0] if n<0
+     *
+     * Note: |n| < 2^32 
      */
     int next_int(const int &n) {
-        return static_cast<int>( static_cast<double>(n)*next() );
+        return static_cast<int>( static_cast<float>(n)*next() );
     }
 
     /**
@@ -157,7 +159,7 @@ class Ranmar: public virtual Random {
     size_t jp;
     int c;
 
-    const double norm;
+    const float norm;
 
     int *u;
 

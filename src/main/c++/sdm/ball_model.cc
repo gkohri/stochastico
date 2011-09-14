@@ -56,7 +56,7 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
     double nn_dist = noirSpace->norm(nexus->get_data_point(),
                                      nn->get_data_point() );
 
-    double radius = diameter*(lp + (up-lp)*rand->next());
+    double radius = diameter*(lp + (up-lp)*static_cast<double>(rand->next()));
 
     radius = radius < nn_dist ? nn_dist : radius;
 
@@ -76,7 +76,7 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double between = coordinate;
         if ( !isnan( coordinate ) && !isnan( nn_reals[r] ) ) {
             double diff = nn_reals[r] - coordinate;
-            between += diff*rand->next();
+            between += diff*static_cast<double>(rand->next());
             //between = (nn_reals[r] + coordinate)*0.5;
         } else {
             between = numeric_limits<double>::quiet_NaN();
@@ -97,7 +97,7 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double between = coordinate;
         if ( !isnan( coordinate ) && !isnan( nn_intervals[i] ) ) {
             double diff = nn_intervals[i] - coordinate;
-            between += diff*rand->next();
+            between += diff*static_cast<double>(rand->next());
         } else {
             between = numeric_limits<double>::quiet_NaN();
         }
@@ -118,7 +118,7 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         double between = coordinate;
         if ( !isnan( coordinate ) && !isnan( nn_ordinals[o] ) ){
             double diff = nn_ordinals[o] - coordinate;
-            between += diff*rand->next();
+            between += diff*static_cast<double>(rand->next());
         } else {
             between = numeric_limits<double>::quiet_NaN();
         }
@@ -147,7 +147,7 @@ void BallModel::expand( const Orthotope &region, CoveredPoint *nexus,
         }
 
         for ( int nn = 0; nn < max_allowable; ++nn) {
-            if ( rand->next() > up ) continue;
+            if ( static_cast<double>(rand->next()) > up ) continue;
             ball->add_nominal( n, nn );
         }
     }

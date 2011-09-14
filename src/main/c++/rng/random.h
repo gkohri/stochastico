@@ -28,7 +28,7 @@ class Random {
     /**
      * Generate a random number uniformly in the range [0.0,1.0]
      */
-    virtual double next() = 0;
+    virtual float next() = 0;
 
     /**
      * Generate a random, unsigned integer uniformly in the range [0,2^32-1]

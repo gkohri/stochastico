@@ -66,13 +66,13 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
 
         double radius = (upper - lower)*0.5;
 
-        double zu = radius*(lp + (up-lp)*rand->next());
+        double zu = radius*(lp + (up-lp)*static_cast<double>(rand->next()));
         double rectUpper = coordinate + zu;
         if ( nn_diff > 0.0 ) rectUpper += nn_diff;
 
         if ( rectUpper > upper ) rectUpper = upper;
 
-        double zl = radius*(lp + (up-lp)*rand->next());
+        double zl = radius*(lp + (up-lp)*static_cast<double>(rand->next()));
         double rectLower = coordinate - zl;
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
@@ -100,7 +100,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
 
         double radius = 0.5;
 
-        double zu = radius*(lp + (up-lp)*rand->next());
+        double zu = radius*(lp + (up-lp)*static_cast<double>(rand->next()));
         double rectUpper = coordinate + zu;
         if ( nn_diff > 0.0 ) rectUpper += nn_diff;
 
@@ -109,7 +109,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
         else if ( rectUpper > upper )
             rectUpper = upper;
 
-        double zl = radius*(lp + (up-lp)*rand->next());
+        double zl = radius*(lp + (up-lp)*static_cast<double>(rand->next()));
         double rectLower = coordinate - zl;
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
 
@@ -140,7 +140,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
 
         double radius = (upper - lower)/2.0;
 
-        double zu = radius*(lp + (up-lp)*rand->next());
+        double zu = radius*(lp + (up-lp)*static_cast<double>(rand->next()));
         //double zu = 0.15;
         double rectUpper = coordinate + zu;
         if ( nn_diff > 0.0 ) rectUpper += nn_diff;
@@ -158,7 +158,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
 */
 
-        double zl = radius*(lp + (up-lp)*rand->next());
+        double zl = radius*(lp + (up-lp)*static_cast<double>(rand->next()));
         //double zl = 0.15;
         double rectLower = coordinate - zl;
         if ( nn_diff < 0.0 ) rectLower += nn_diff;
@@ -196,7 +196,7 @@ void OrthotopeModel::expand( const Orthotope &region, CoveredPoint *nexus,
         int max_allowable = static_cast<int>(allowed.size());
 
         for ( int nn = 0; nn < max_allowable; ++nn) {
-            if ( rand->next() > up ) continue;
+            if ( static_cast<double>(rand->next()) > up ) continue;
             orthotope->add_nominal( n, nn );
         }
     }
@@ -214,7 +214,7 @@ void OrthotopeModel::thicken(const Orthotope &region, Random *rand,
     double upper = 0.0;
     double lower = 0.0;
     for ( int d = 0; d < region.noirSpace->real; d++ ){
-        if ( rand->next() > frac ) continue;
+        if ( static_cast<double>(rand->next()) > frac ) continue;
 
         region.get_real_boundaries( d, lower, upper );
 
