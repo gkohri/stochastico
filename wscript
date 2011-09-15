@@ -40,7 +40,7 @@ def options(opt):
 #  present.)
 #
 def configure(cnf):
-        cnf.check_waf_version(mini='1.6.3')
+        cnf.check_waf_version(mini='1.6.7')
         cnf.load('compiler_cxx doxygen')
         cnf.env.append_unique('CXXFLAGS', ['-O2', '-g', '-std=c++0x',
                               '-Wall','-mtune=native','-march=native'])
